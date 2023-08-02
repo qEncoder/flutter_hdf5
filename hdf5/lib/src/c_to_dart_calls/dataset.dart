@@ -10,30 +10,25 @@ import 'package:ffi/ffi.dart';
 ndarray readData(datasetId) {
   HDF5Bindings HDF5lib = HDF5Bindings();
 
-  int typeId = HDF5lib.H5A.getType(datasetId);
-  int spaceId = HDF5lib.H5A.getSpace(datasetId);
+  int typeId = HDF5lib.H5D.getType(datasetId);
+  int spaceId = HDF5lib.H5D.getSpace(datasetId);
 
   TypeInfo typeInfo = getTypeInfo(typeId);
   SpaceInfo spaceInfo = getSpaceInfo(spaceId);
 
-  HDF5lib.H5T.close(typeId);
-  HDF5lib.H5S.close(spaceId);
-
-  int size = typeInfo.size;
+  int size = 1; //typeInfo.size;
   for (int d in spaceInfo.dim) {
     size *= d;
   }
+  print(spaceInfo.dim);
 
-  Pointer<Int8> data = calloc.allocate<Int8>(size);
-  HDF5lib.H5D.read(
-      datasetId, typeInfo.nativeTypeId, H5S_ALL, H5S_ALL, H5P_DEFAULT, data);
+  Pointer<Int8> data = calloc.allocate<Int8>(2);
 
   // note that due some limitations in numd, a conversion must be performed to double
   ndarray dataOut = ndarray.fromShape([1]);
   if (spaceInfo.rank != 0) {
     dataOut = ndarray.fromShape(spaceInfo.dim);
   }
-
   switch (typeInfo.size) {
     case 4:
       switch (typeInfo.type) {
@@ -57,10 +52,13 @@ ndarray readData(datasetId) {
     case 8:
       switch (typeInfo.type) {
         case H5T_FLOAT:
-          Pointer<Double> dataPointer = Pointer.fromAddress(data.address);
-          for (var i = 0; i < dataOut.size; i++) {
+          Pointer<Double> dataPointer = calloc<Double>(size);
+          HDF5lib.H5D.read(datasetId, typeInfo.nativeTypeId, H5S_ALL, H5S_ALL,
+              H5P_DEFAULT, dataPointer);
+          for (int i = 0; i < dataOut.size; i++) {
             dataOut.flat[i] = dataPointer[i];
           }
+          calloc.free(dataPointer);
           break;
         case H5T_INTEGER:
           Pointer<Int64> dataPointer = Pointer.fromAddress(data.address);
@@ -76,8 +74,7 @@ ndarray readData(datasetId) {
     default:
       throw "Only 32 and 64 bit types are supported.";
   }
-
-  calloc.free(data);
   typeInfo.dispose();
+  calloc.free(data);
   return dataOut;
 }

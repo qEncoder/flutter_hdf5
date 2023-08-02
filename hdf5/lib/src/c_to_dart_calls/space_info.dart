@@ -3,11 +3,19 @@ import 'package:hdf5/src/bindings/HDF5_bindings.dart';
 import 'dart:ffi';
 import 'package:ffi/ffi.dart';
 
-class SpaceInfo {
+class SpaceInfo implements Finalizable {
   int rank;
   List<int> dim;
   List<int> maxDim;
-  SpaceInfo(this.rank, this.dim, this.maxDim);
+  int spaceId;
+
+  static final _finalizer = NativeFinalizer(HDF5Bindings().H5S.closePtr);
+
+  SpaceInfo(this.rank, this.dim, this.maxDim, {this.spaceId = -1}) {
+    if (spaceId != -1) {
+      _finalizer.attach(this, Pointer.fromAddress(spaceId));
+    }
+  }
 }
 
 SpaceInfo getSpaceInfo(int spaceId) {
@@ -32,5 +40,5 @@ SpaceInfo getSpaceInfo(int spaceId) {
     calloc.free(maxDimPtr);
   }
 
-  return SpaceInfo(rank, dim, maxDim);
+  return SpaceInfo(rank, dim, maxDim, spaceId: spaceId);
 }

@@ -1,8 +1,7 @@
 import 'dart:ffi';
 
-import 'package:hdf5/src/HDF5_dataset.dart';
 import 'package:hdf5/src/HDF5_file.dart';
-import 'package:hdf5/src/HDF5_group.dart';
+import 'package:hdf5/src/bindings/H5T.dart';
 import 'package:hdf5/src/bindings/HDF5_bindings.dart';
 import 'package:hdf5/src/c_to_dart_calls/error.dart';
 import 'package:hdf5/src/c_to_dart_calls/utility.dart';
@@ -48,7 +47,7 @@ class CompoundMemberInfo {
 
   CompoundMemberInfo(this.name, this.spaceInfo, this.typeInfo, this.offset);
 
-  void dipose() {
+  void dispose() {
     typeInfo.dispose();
   }
 }
@@ -66,8 +65,6 @@ dynamic readAttr(H5File file, int objId, String name) {
   SpaceInfo spaceInfo = getSpaceInfo(spaceId);
 
   calloc.free(namePtr);
-  HDF5lib.H5T.close(typeId);
-  HDF5lib.H5S.close(spaceId);
 
   int size = typeInfo.size;
   for (int i in spaceInfo.dim) {
@@ -76,13 +73,11 @@ dynamic readAttr(H5File file, int objId, String name) {
 
   Pointer myData = calloc.allocate<Uint8>(size);
   HDF5lib.H5A.read(attrId, typeInfo.nativeTypeId, myData);
-  print("considering object with name ${name}");
-  print("the type is ${H5T_class_t[typeInfo.type]}");
 
   dynamic output = cAttrDataToDart(file, myData, typeInfo, spaceInfo);
   calloc.free(myData);
-  HDF5lib.H5A.close(attrId);
   typeInfo.dispose();
+  HDF5lib.H5A.close(attrId);
   return output;
 }
 
@@ -218,7 +213,7 @@ dynamic cAttrDataToDart(
           Pointer<Uint8> nameC = calloc.allocate<Uint8>(nameSize + 1);
           Pointer<Pointer<Uint8>> namePtr = Pointer.fromAddress(nameC.address);
           int error = HDF5lib.H5R
-              .getName(objId, H5R_OBJECT, refenceList, namePtr, nameSize);
+              .getName(objId, H5R_OBJECT, refenceList, namePtr, nameSize + 1);
           if (error < 0) throw "Error in obtaining attribute name";
 
           String name = charToString(nameC);
@@ -231,21 +226,50 @@ dynamic cAttrDataToDart(
 
           switch (objType) {
             case H5O_TYPE_GROUP:
-              output = H5Group.rawInit(file, name, objId);
+              // group seems to close with the closing of the reference.
+              HDF5lib.H5G.close(objId);
+              output = file.openGroup(name);
               break;
             case H5O_TYPE_DATASET:
-              output = H5Dataset.rawInit(file, name, objId);
+              // dataset seems to close with the closing of the reference.
+              HDF5lib.H5D.close(objId);
+              output = file.openDataset(name);
               break;
             default:
               throw "object type ${H5O_type_t[objType]} not supported";
           }
           break;
         case 1:
-          throw "List of references not yet supported.";
+          output = [];
+          for (int i = 0; i < spaceInfo.dim[0]; i++) {
+            Pointer dataPtr = refenceList.elementAt(i);
+            output.add(
+                cAttrDataToDart(file, dataPtr, typeInfo, SpaceInfo(0, [], [])));
+          }
+          break;
+        default:
+          throw H5RankException(spaceInfo.rank);
       }
 
     case H5T_ARRAY:
       throw "Array attributes currently not supported.";
+
+    case H5T_VLEN:
+      output = [];
+      Pointer<hvl_t> dataPtr = Pointer.fromAddress(myData.address);
+      TypeInfo VLEN_TYPE =
+          getTypeInfo(HDF5lib.H5T.getSuper(typeInfo.nativeTypeId));
+
+      for (int i = 0; i < spaceInfo.dim[0]; i++) {
+        SpaceInfo VLEN_SPACE = SpaceInfo(1, [dataPtr[i].len], [dataPtr[i].len]);
+        output.add(
+            cAttrDataToDart(file, dataPtr[i].p.cast(), VLEN_TYPE, VLEN_SPACE));
+      }
+
+      HDF5lib.H5T.reclaim(
+          typeInfo.nativeTypeId, spaceInfo.spaceId, H5P_DEFAULT, dataPtr);
+      VLEN_TYPE.dispose();
+      break;
 
     case H5T_COMPOUND:
       int nMembers = HDF5lib.H5T.getNMembers(typeInfo.nativeTypeId);
@@ -297,12 +321,14 @@ dynamic cAttrDataToDart(
             }
             output.add(compoundData);
           }
+
           break;
         default:
           throw H5RankException(spaceInfo.rank);
       }
-      for (var member in compoundMemberInfo) {
-        member.typeInfo.dispose();
+
+      for (var cMI in compoundMemberInfo) {
+        cMI.dispose();
       }
       break;
     default:

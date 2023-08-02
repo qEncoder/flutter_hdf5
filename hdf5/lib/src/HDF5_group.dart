@@ -21,6 +21,8 @@ class H5Group implements Finalizable {
   H5Group(this.file, this.name) {
     Pointer<Uint8> namePtr = strToChar(name);
     groupId = HDF5Bindings().H5G.open(file.fileId, namePtr, H5P_DEFAULT);
+    print("creating group at $name with id:: ${groupId}");
+
     calloc.free(namePtr);
     attr = AttributeMgr(file, groupId);
     groups = getGroupItems(groupId, H5O_TYPE_GROUP);
@@ -32,7 +34,10 @@ class H5Group implements Finalizable {
   H5Group.rawInit(this.file, this.name, this.groupId)
       : attr = AttributeMgr(file, groupId),
         groups = getGroupItems(groupId, H5O_TYPE_GROUP),
-        datasets = getGroupItems(groupId, H5O_TYPE_DATASET);
+        datasets = getGroupItems(groupId, H5O_TYPE_DATASET) {
+    _finalizer.attach(this, Pointer.fromAddress(groupId));
+    print("creating group at $name with id:: ${groupId} (RAW init)");
+  }
 
   dynamic operator [](String key) {
     if (isGroup(key)) {

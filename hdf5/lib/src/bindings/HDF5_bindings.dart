@@ -51,6 +51,8 @@ export 'H5S.dart' show H5S_ALL;
 export 'H5R.dart'
     show H5R_BADTYPE, H5R_OBJECT, H5R_DATASET_REGION, H5R_MAXTYPE, H5R_type_t;
 
+import 'package:flutter/foundation.dart';
+
 import 'H5.dart';
 import 'H5A.dart';
 import 'H5D.dart';
@@ -61,6 +63,37 @@ import 'H5S.dart';
 import 'H5T.dart';
 import 'H5O.dart';
 import 'H5R.dart';
+
+typedef H5D_closing_c = Void Function(Pointer datasetID);
+typedef H5D_closing = void Function(Pointer datasetID);
+
+class H5RBindings {
+  final H5Rdereference deReference;
+  final H5Rget_name getName;
+  final H5Rget_obj_type getObjType;
+
+  H5RBindings(DynamicLibrary HDF5Lib)
+      : deReference =
+            HDF5Lib.lookup<NativeFunction<H5Rdereference_c>>('H5Rdereference2')
+                .asFunction(),
+        getName = HDF5Lib.lookup<NativeFunction<H5Rget_name_c>>('H5Rget_name')
+            .asFunction(),
+        getObjType = HDF5Lib.lookup<NativeFunction<H5Rget_obj_type_c>>(
+                'H5Rget_obj_type2')
+            .asFunction();
+}
+
+class H5CBindings {
+  DynamicLibrary lib;
+  Pointer<NativeFunction<Void Function(Pointer)>> H5DClose;
+  H5D_closing H5DClose2;
+  H5CBindings(this.lib)
+      : H5DClose =
+            lib.lookup<NativeFunction<H5D_closing_c>>('custom_H5D_close'),
+        H5DClose2 = lib
+            .lookup<NativeFunction<H5D_closing_c>>('custom_H5D_close')
+            .asFunction();
+}
 
 class HDF5Bindings {
   static final HDF5Bindings __instance = HDF5Bindings.__new__();
@@ -74,19 +107,28 @@ class HDF5Bindings {
   late final H5TBindings H5T;
   late final H5OBindings H5O;
   late final H5RBindings H5R;
+  late final H5CBindings H5C;
 
   factory HDF5Bindings() {
     return __instance;
   }
 
   HDF5Bindings.__new__() {
-    String libraryPath = 'libhdf5.so';
-    if (Platform.isMacOS) {
-      libraryPath = 'libHDF5.dylib';
-    } else if (Platform.isWindows) {
-      libraryPath = 'libHDF5.dll';
+    String libraryPath;
+    if (kDebugMode) {
+      libraryPath = "/home/stephan/Desktop/Graphs/hdf5/linux/lib/libhdf5.so";
+    } else {
+      libraryPath = 'libhdf5.so';
+      if (Platform.isMacOS) {
+        libraryPath = 'libHDF5.dylib';
+      } else if (Platform.isWindows) {
+        libraryPath = 'libHDF5.dll';
+      }
     }
+    String libraryPath2 =
+        "/home/stephan/Desktop/Graphs/hdf5/linux/libhdf5_deconstruct.so";
     final DynamicLibrary HDF5Lib = DynamicLibrary.open(libraryPath);
+    final DynamicLibrary HDF5Lib2 = DynamicLibrary.open(libraryPath2);
 
     H5 = H5Bindings(HDF5Lib);
     H5A = H5ABindings(HDF5Lib);
@@ -98,5 +140,6 @@ class HDF5Bindings {
     H5T = H5TBindings(HDF5Lib);
     H5O = H5OBindings(HDF5Lib);
     H5R = H5RBindings(HDF5Lib);
+    H5C = H5CBindings(HDF5Lib2);
   }
 }

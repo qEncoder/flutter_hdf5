@@ -15,6 +15,7 @@ class H5File implements Finalizable {
     Pointer<Uint8> namePtr = strToChar(filename);
     fileId = HDF5Bindings().H5F.open(namePtr, H5F_ACC_RDONLY, H5P_DEFAULT);
     calloc.free(namePtr);
+    print("file opened with the following ID $fileId");
 
     _finalizer.attach(this, Pointer.fromAddress(fileId));
   }
@@ -24,12 +25,10 @@ class H5File implements Finalizable {
   }
 
   H5Group openGroup(String name) {
-    H5Group grp = H5Group(this, name);
-    return grp;
+    return H5Group(this, name);
   }
 
   H5Dataset openDataset(String name) {
-    H5Dataset dataset = H5Dataset(this, name);
-    return dataset;
+    return H5Dataset(this, name);
   }
 }

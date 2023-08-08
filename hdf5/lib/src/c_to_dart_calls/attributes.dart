@@ -16,26 +16,23 @@ getAttrNames(int loc_id) {
   int nAttr = HDF5lib.H5A.getNumAttrs(loc_id);
 
   List<String> attrNames = [];
-  for (var i = 0; i < nAttr; i++) {
-    Pointer<Uint8> obj_name = strToChar(".");
-    Pointer<Pointer<Uint8>> nullPtr = Pointer.fromAddress(0);
+  Pointer<Uint8> obj_name = strToChar(".");
 
+  for (var i = 0; i < nAttr; i++) {
     int attrSize = HDF5lib.H5A.getNameByIdx(loc_id, obj_name, H5_INDEX_NAME,
-        H5_ITER_INC, i, nullPtr, 0, H5P_DEFAULT);
+        H5_ITER_INC, i, nullptr, 0, H5P_DEFAULT);
     if (attrSize < 0) throw "Error in attr size (negative)";
 
-    Pointer<Uint8> name = calloc.allocate<Uint8>(attrSize + 1);
-    Pointer<Pointer<Uint8>> namePtr = Pointer.fromAddress(name.address);
-
+    Pointer<Uint8> name = calloc<Uint8>(attrSize + 1);
     int error = HDF5lib.H5A.getNameByIdx(loc_id, obj_name, H5_INDEX_NAME,
-        H5_ITER_INC, i, namePtr, attrSize + 1, H5P_DEFAULT);
+        H5_ITER_INC, i, name, attrSize + 1, H5P_DEFAULT);
     if (error < 0) throw "Error in obtaining attribute name";
 
     attrNames.add(charToString(name));
-
     calloc.free(name);
-    calloc.free(obj_name);
   }
+  calloc.free(obj_name);
+
   return attrNames;
 }
 
@@ -49,6 +46,7 @@ class CompoundMemberInfo {
 
   void dispose() {
     typeInfo.dispose();
+    spaceInfo.dispose();
   }
 }
 
@@ -71,12 +69,13 @@ dynamic readAttr(H5File file, int objId, String name) {
     size *= i;
   }
 
-  Pointer myData = calloc.allocate<Uint8>(size);
+  Pointer myData = calloc<Uint8>(size);
   HDF5lib.H5A.read(attrId, typeInfo.nativeTypeId, myData);
 
   dynamic output = cAttrDataToDart(file, myData, typeInfo, spaceInfo);
   calloc.free(myData);
   typeInfo.dispose();
+  spaceInfo.dispose();
   HDF5lib.H5A.close(attrId);
   return output;
 }
@@ -205,21 +204,19 @@ dynamic cAttrDataToDart(
           int objId = HDF5lib.H5R
               .deReference(file.fileId, H5P_DEFAULT, H5R_OBJECT, refenceList);
 
-          Pointer<Pointer<Uint8>> nullPtr = Pointer.fromAddress(0);
           int nameSize =
-              HDF5lib.H5R.getName(objId, H5R_OBJECT, refenceList, nullPtr, 0);
+              HDF5lib.H5R.getName(objId, H5R_OBJECT, refenceList, nullptr, 0);
           if (nameSize < 0) throw "Error in getting name of the reference.";
 
-          Pointer<Uint8> nameC = calloc.allocate<Uint8>(nameSize + 1);
-          Pointer<Pointer<Uint8>> namePtr = Pointer.fromAddress(nameC.address);
+          Pointer<Uint8> nameC = calloc<Uint8>(nameSize + 1);
           int error = HDF5lib.H5R
-              .getName(objId, H5R_OBJECT, refenceList, namePtr, nameSize + 1);
+              .getName(objId, H5R_OBJECT, refenceList, nameC, nameSize + 1);
           if (error < 0) throw "Error in obtaining attribute name";
 
           String name = charToString(nameC);
           calloc.free(nameC);
 
-          Pointer<Int64> objTypeC = calloc.allocate<Int64>(1);
+          Pointer<Int32> objTypeC = calloc<Int32>(1);
           HDF5lib.H5R.getObjType(objId, H5R_OBJECT, refenceList, objTypeC);
           int objType = objTypeC.value;
           calloc.free(objTypeC);
@@ -236,7 +233,7 @@ dynamic cAttrDataToDart(
               output = file.openDataset(name);
               break;
             default:
-              throw "object type ${H5O_type_t[objType]} not supported";
+              throw "object type ${H5O_type_t[objType]} ($objType) not supported";
           }
           break;
         case 1:

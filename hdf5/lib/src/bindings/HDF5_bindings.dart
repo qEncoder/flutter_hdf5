@@ -62,22 +62,6 @@ import 'H5T.dart';
 import 'H5O.dart';
 import 'H5R.dart';
 
-class H5RBindings {
-  final H5Rdereference deReference;
-  final H5Rget_name getName;
-  final H5Rget_obj_type getObjType;
-
-  H5RBindings(DynamicLibrary HDF5Lib)
-      : deReference =
-            HDF5Lib.lookup<NativeFunction<H5Rdereference_c>>('H5Rdereference2')
-                .asFunction(),
-        getName = HDF5Lib.lookup<NativeFunction<H5Rget_name_c>>('H5Rget_name')
-            .asFunction(),
-        getObjType = HDF5Lib.lookup<NativeFunction<H5Rget_obj_type_c>>(
-                'H5Rget_obj_type2')
-            .asFunction();
-}
-
 class HDF5Bindings {
   static final HDF5Bindings __instance = HDF5Bindings.__new__();
   late final H5Bindings H5;

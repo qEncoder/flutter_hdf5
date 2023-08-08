@@ -26,18 +26,11 @@ typedef H5Aget_name_by_idx_c = Int64 Function(
     Int32 idx_type,
     Int32 order,
     Uint64 n,
-    Pointer<Pointer<Uint8>> name,
+    Pointer<Uint8> name,
     Uint64 size,
     Int64 lapl_id);
-typedef H5Aget_name_by_idx = int Function(
-    int loc_id,
-    Pointer<Uint8> obj_name,
-    int idx_type,
-    int order,
-    int n,
-    Pointer<Pointer<Uint8>> name,
-    int size,
-    int lapl_id);
+typedef H5Aget_name_by_idx = int Function(int loc_id, Pointer<Uint8> obj_name,
+    int idx_type, int order, int n, Pointer<Uint8> name, int size, int lapl_id);
 
 typedef H5Aread_c = Int64 Function(Int64 attr_id, Int64 type_id, Pointer buf);
 typedef H5Aread = int Function(int attr_id, int type_id, Pointer buf);

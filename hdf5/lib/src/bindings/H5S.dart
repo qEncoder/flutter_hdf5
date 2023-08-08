@@ -8,10 +8,10 @@ typedef H5Sclose = int Function(int space_id);
 typedef H5Sget_simple_extent_ndims_c = Int64 Function(Int64 space_id);
 typedef H5Sget_simple_extent_ndims = int Function(int space_id);
 
-typedef H5Sget_simple_extent_dims_c = Int64 Function(Int64 space_id,
-    Pointer<Pointer<Int64>> dims, Pointer<Pointer<Int64>> maxdims);
-typedef H5Sget_simple_extent_dims = int Function(int space_id,
-    Pointer<Pointer<Int64>> dims, Pointer<Pointer<Int64>> maxdims);
+typedef H5Sget_simple_extent_dims_c = Int64 Function(
+    Int64 space_id, Pointer<Int64> dims, Pointer<Int64> maxdims);
+typedef H5Sget_simple_extent_dims = int Function(
+    int space_id, Pointer<Int64> dims, Pointer<Int64> maxdims);
 
 class H5SBindings {
   final H5Sclose close;

@@ -33,6 +33,7 @@ class H5Dataset implements Finalizable {
     SpaceInfo spaceInfo = getSpaceInfo(spaceId);
     ndim = spaceInfo.rank;
     shape = spaceInfo.dim;
+    spaceInfo.dispose();
 
     _finalizer.attach(this, Pointer.fromAddress(datasetId));
   }

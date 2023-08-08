@@ -23,11 +23,11 @@ class CoreToolsDataLoader {
 
   CoreToolsDataLoader(String fileName) : file = H5File.open(fileName) {
     grpMain = file.group;
-
     for (String ds in grpMain.datasets) {
       H5Dataset dataset = grpMain[ds];
-      if (grpMain[ds].attr.attrNames.contains("DIMENSION_LIST")) {
-        if (grpMain[ds].name.startsWith("RAW")) {
+      print(dataset.attr.attrNames);
+      if (dataset.attr.attrNames.contains("DIMENSION_LIST")) {
+        if (dataset.name.startsWith("RAW")) {
           rawMeasDS.add(dataset);
         } else {
           proMeasDS.add(dataset);
@@ -42,10 +42,6 @@ GraphData initializeGraphData(H5Dataset dataset) {
   List<String> labels = [];
   List<String> units = [];
 
-  data.add(dataset.getData());
-  labels.add(dataset.attr['long_name']);
-  units.add(dataset.attr['units']);
-
   List<dynamic> linkedDS = dataset.attr['DIMENSION_LIST'];
   for (var ds in linkedDS) {
     data.add(ds[0].getData());
@@ -53,6 +49,12 @@ GraphData initializeGraphData(H5Dataset dataset) {
     units.add(ds[0].attr['units']);
   }
 
+  data.add(dataset.getData());
+  labels.add(dataset.attr['long_name']);
+  units.add(dataset.attr['units']);
+
+  print(labels);
+  print("data loaded");
   return GraphData(data, labels, units);
 }
 

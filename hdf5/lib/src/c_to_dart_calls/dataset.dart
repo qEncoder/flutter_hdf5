@@ -16,30 +16,30 @@ ndarray readData(datasetId) {
   TypeInfo typeInfo = getTypeInfo(typeId);
   SpaceInfo spaceInfo = getSpaceInfo(spaceId);
 
-  int size = 1; //typeInfo.size;
-  for (int d in spaceInfo.dim) {
-    size *= d;
-  }
-  print(spaceInfo.dim);
-
-  Pointer<Int8> data = calloc.allocate<Int8>(2);
-
-  // note that due some limitations in numd, a conversion must be performed to double
   ndarray dataOut = ndarray.fromShape([1]);
   if (spaceInfo.rank != 0) {
     dataOut = ndarray.fromShape(spaceInfo.dim);
   }
+
+  int size = typeInfo.size * dataOut.size;
+
+  Pointer<Int8> data = calloc<Int8>(size);
+  HDF5lib.H5D.read(
+      datasetId, typeInfo.nativeTypeId, H5S_ALL, H5S_ALL, H5P_DEFAULT, data);
+
+  // note that due some limitations in numd, a conversion must be performed to double
+
   switch (typeInfo.size) {
     case 4:
       switch (typeInfo.type) {
         case H5T_FLOAT:
-          Pointer<Float> dataPointer = Pointer.fromAddress(data.address);
+          Pointer<Float> dataPointer = data.cast<Float>();
           for (var i = 0; i < dataOut.size; i++) {
             dataOut.flat[i] = dataPointer[i];
           }
           break;
         case H5T_INTEGER:
-          Pointer<Int32> dataPointer = Pointer.fromAddress(data.address);
+          Pointer<Int32> dataPointer = data.cast<Int32>();
           for (var i = 0; i < dataOut.size; i++) {
             int value = dataPointer[i];
             dataOut.flat[i] = value.toDouble();
@@ -52,16 +52,13 @@ ndarray readData(datasetId) {
     case 8:
       switch (typeInfo.type) {
         case H5T_FLOAT:
-          Pointer<Double> dataPointer = calloc<Double>(size);
-          HDF5lib.H5D.read(datasetId, typeInfo.nativeTypeId, H5S_ALL, H5S_ALL,
-              H5P_DEFAULT, dataPointer);
+          Pointer<Double> dataPointer = data.cast<Double>();
           for (int i = 0; i < dataOut.size; i++) {
             dataOut.flat[i] = dataPointer[i];
           }
-          calloc.free(dataPointer);
           break;
         case H5T_INTEGER:
-          Pointer<Int64> dataPointer = Pointer.fromAddress(data.address);
+          Pointer<Int64> dataPointer = data.cast<Int64>();
           for (var i = 0; i < dataOut.size; i++) {
             int value = dataPointer[i];
             dataOut.flat[i] = value.toDouble();
@@ -75,6 +72,7 @@ ndarray readData(datasetId) {
       throw "Only 32 and 64 bit types are supported.";
   }
   typeInfo.dispose();
+  spaceInfo.dispose();
   calloc.free(data);
   return dataOut;
 }

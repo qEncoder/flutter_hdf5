@@ -3,18 +3,16 @@ import 'package:hdf5/src/bindings/HDF5_bindings.dart';
 import 'dart:ffi';
 import 'package:ffi/ffi.dart';
 
-class SpaceInfo implements Finalizable {
+class SpaceInfo {
   int rank;
   List<int> dim;
   List<int> maxDim;
   int spaceId;
 
-  static final _finalizer = NativeFinalizer(HDF5Bindings().H5S.closePtr);
+  SpaceInfo(this.rank, this.dim, this.maxDim, {this.spaceId = -1});
 
-  SpaceInfo(this.rank, this.dim, this.maxDim, {this.spaceId = -1}) {
-    if (spaceId != -1) {
-      _finalizer.attach(this, Pointer.fromAddress(spaceId));
-    }
+  void dispose() {
+    if (spaceId > 0) HDF5Bindings().H5S.close(spaceId);
   }
 }
 
@@ -26,11 +24,9 @@ SpaceInfo getSpaceInfo(int spaceId) {
   List<int> dim = [];
   List<int> maxDim = [];
   if (rank > 0) {
-    Pointer<Int64> dimPtr = calloc.allocate<Int64>(rank);
-    Pointer<Pointer<Int64>> dimPtrPtr = Pointer.fromAddress(dimPtr.address);
-    Pointer<Int64> maxDimPtr = calloc.allocate<Int64>(rank);
-    Pointer<Pointer<Int64>> maxDimPtrPtr = Pointer.fromAddress(dimPtr.address);
-    HDF5lib.H5S.getSimpleExtentDims(spaceId, dimPtrPtr, maxDimPtrPtr);
+    Pointer<Int64> dimPtr = calloc<Int64>(rank);
+    Pointer<Int64> maxDimPtr = calloc<Int64>(rank);
+    HDF5lib.H5S.getSimpleExtentDims(spaceId, dimPtr, maxDimPtr);
 
     for (var i = 0; i < rank; i++) {
       dim.add(dimPtr[i]);

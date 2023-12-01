@@ -23,17 +23,24 @@ class CoreToolsDataLoader {
 
   CoreToolsDataLoader(String fileName) : file = H5File.open(fileName) {
     grpMain = file.group;
-    for (String ds in grpMain.datasets) {
-      H5Dataset dataset = grpMain[ds];
-      print(dataset.attr.attrNames);
-      if (dataset.attr.attrNames.contains("DIMENSION_LIST")) {
-        if (dataset.name.startsWith("RAW")) {
-          rawMeasDS.add(dataset);
-        } else {
-          proMeasDS.add(dataset);
-        }
-      }
-    }
+    // for (String ds in grpMain.datasets) {
+    //   H5Dataset dataset = grpMain[ds];
+    //   print(dataset.attr.attrNames);
+    //   if (dataset.attr.attrNames.contains("DIMENSION_LIST")) {
+    //     if (dataset.name.startsWith("RAW")) {
+    //       rawMeasDS.add(dataset);
+    //     } else {
+    //       proMeasDS.add(dataset);
+    //     }
+    //   }
+    // }
+    H5Dataset dataset = grpMain['read56_cnot4'];
+    print(dataset.attr['long_name']);
+    print(dataset.attr['param_name']);
+    print(dataset.attr['units']);
+    H5Dataset dataset2 = grpMain['freq'];
+    print(dataset2.attr['long_name']);
+    print(dataset2.attr['units']);
   }
 }
 
@@ -65,7 +72,8 @@ class _MyAppState extends State<MyApp> {
   void initState() {
     super.initState();
 
-    ld = CoreToolsDataLoader("test.hdf5");
+    ld = CoreToolsDataLoader(
+        "C:/Users/steph/AppData/Local/qdrive/user_data/files/3fa85f60-5617-4562-b3fc-2c963f66afa6/1487ba48-56be-4f75-ad24-ade545272702/f243c241-a7d1-4eae-9031-521c02db5c25/measured_data_ct.HDF5");
 
     for (var i in ld.proMeasDS) {
       print("adding ${i}");

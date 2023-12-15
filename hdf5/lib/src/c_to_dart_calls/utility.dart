@@ -4,7 +4,7 @@ import 'dart:typed_data';
 import 'package:ffi/ffi.dart';
 
 Pointer<Uint8> strToChar(String string) {
-  Pointer<Uint8> stringPtr = calloc.allocate<Uint8>(string.length + 1);
+  Pointer<Uint8> stringPtr = calloc<Uint8>(string.length + 1);
   Uint8List stringList = Uint8List.fromList(string.codeUnits);
 
   for (var i = 0; i < stringList.length; i++) {
@@ -28,4 +28,12 @@ String charToString(Pointer<Uint8> charstr, {int lenStr = 0}) {
   }
 
   return String.fromCharCodes(stringList);
+}
+
+Pointer<Int64> IntListToPtrArr(List<int> input) {
+  Pointer<Int64> arr = calloc<Int64>(input.length);
+  for (var i = 0; i < input.length; i++) {
+    arr[i] = input[i];
+  }
+  return arr;
 }

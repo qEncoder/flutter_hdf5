@@ -47,7 +47,19 @@ export 'H5T.dart'
         H5T_ENUM,
         H5T_VLEN,
         H5T_ARRAY;
-export 'H5S.dart' show H5S_ALL;
+export 'H5S.dart'
+    show
+        H5S_ALL,
+        H5S_SELECT_NOOP,
+        H5S_SELECT_SET,
+        H5S_SELECT_OR,
+        H5S_SELECT_AND,
+        H5S_SELECT_XOR,
+        H5S_SELECT_NOTB,
+        H5S_SELECT_NOTA,
+        H5S_SELECT_APPEND,
+        H5S_SELECT_PREPEND,
+        H5S_SELECT_INVALID;
 export 'H5R.dart'
     show H5R_BADTYPE, H5R_OBJECT, H5R_DATASET_REGION, H5R_MAXTYPE, H5R_type_t;
 

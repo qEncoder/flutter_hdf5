@@ -13,9 +13,8 @@ class H5File implements Finalizable {
 
   H5File.open(String filename) {
     Pointer<Uint8> namePtr = strToChar(filename);
-    fileId = HDF5Bindings().H5F.open(namePtr, H5F_ACC_RDONLY, H5P_DEFAULT);
+    fileId = HDF5Bindings().H5F.open(namePtr, H5F_ACC_SWMR_READ, H5P_DEFAULT);
     calloc.free(namePtr);
-    print("file opened with the following ID $fileId");
 
     _finalizer.attach(this, Pointer.fromAddress(fileId));
   }

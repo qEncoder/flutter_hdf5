@@ -25,7 +25,6 @@ class H5Dataset implements Finalizable {
   H5Dataset(this.file, this._name) : name = _name.split("/").last {
     Pointer<Uint8> namePtr = strToChar(_name);
     datasetId = HDF5Bindings().H5D.open(file.fileId, namePtr, H5P_DEFAULT);
-    print("creating dataset $name with id:: ${datasetId}");
 
     attr = AttributeMgr(file, datasetId);
 
@@ -41,15 +40,17 @@ class H5Dataset implements Finalizable {
   H5Dataset.rawInit(this.file, this._name, this.datasetId)
       : attr = AttributeMgr(file, datasetId),
         name = _name.split("/").last {
-    print("creating dataset $_name with id:: ${datasetId} (RAW INIT)");
-
     Pointer<Int64> dsID = calloc<Int64>(1);
     dsID.value = datasetId;
     _finalizer.attach(this, dsID.cast());
   }
 
   dynamic getData() {
-    return readData(datasetId);
+    return readData(datasetId, []);
+  }
+
+  dynamic operator [](dynamic idx) {
+    return readData(datasetId, idx);
   }
 
   @override

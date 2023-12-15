@@ -72,14 +72,25 @@ class _MyAppState extends State<MyApp> {
   void initState() {
     super.initState();
 
-    ld = CoreToolsDataLoader(
-        "C:/Users/steph/AppData/Local/qdrive/user_data/files/3fa85f60-5617-4562-b3fc-2c963f66afa6/1487ba48-56be-4f75-ad24-ade545272702/f243c241-a7d1-4eae-9031-521c02db5c25/measured_data_ct.HDF5");
+    H5File file = H5File.open(
+        'C:/Users/steph/coding/databrowser/hdf5/example/SLICE_TEST.h5');
 
-    for (var i in ld.proMeasDS) {
-      print("adding ${i}");
-      var myData = initializeGraphData(i);
-      graphData1.add(myData);
-    }
+    H5Group grpMain = file.group;
+    print(grpMain.datasets);
+    // H5Dataset dataset = grpMain['_2D'];
+    // print(dataset[[Slice(5, 9), Slice(5, 8)]]);
+
+    H5Dataset dataset = grpMain['_3D'];
+    print(dataset[[3, Slice(5, 8), 2]]);
+
+    // ld = CoreToolsDataLoader(
+    //     "C:/Users/steph/AppData/Local/qdrive/user_data/files/3fa85f60-5617-4562-b3fc-2c963f66afa6/1487ba48-56be-4f75-ad24-ade545272702/f243c241-a7d1-4eae-9031-521c02db5c25/measured_data_ct.HDF5");
+
+    // for (var i in ld.proMeasDS) {
+    //   print("adding ${i}");
+    //   var myData = initializeGraphData(i);
+    //   graphData1.add(myData);
+    // }
   }
 
   @override

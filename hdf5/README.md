@@ -1,9 +1,16 @@
 # hdf5
 
-Plug in that brings HDF5 to flutter with a pythonic syntax.
+A new Flutter project.
 
 ## Getting Started
 
-To import, add the hdf5 dependency to the pubspec.yaml file.
+This project is a starting point for a Flutter application.
 
-An example on how to use the libary can be found in the examples folder.
+A few resources to get you started if this is your first Flutter project:
+
+- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
+- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+
+For help getting started with Flutter development, view the
+[online documentation](https://docs.flutter.dev/), which offers tutorials,
+samples, guidance on mobile development, and a full API reference.

@@ -70,7 +70,6 @@ dynamic readAttr(H5File file, int objId, String name) {
   }
 
   Pointer myData = calloc<Uint8>(size);
-  print("Reading data with size :: $size of $name");
   HDF5lib.H5A.read(attrId, typeInfo.nativeTypeId, myData);
 
   dynamic output = cAttrDataToDart(file, myData, typeInfo, spaceInfo);

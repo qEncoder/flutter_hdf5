@@ -10,7 +10,7 @@ import 'package:ffi/ffi.dart';
 
 class H5Dataset implements Finalizable {
   final H5File file;
-  final String _name;
+  final String fullName;
   final String name;
 
   late final int ndim;
@@ -22,8 +22,8 @@ class H5Dataset implements Finalizable {
 
   static final _finalizer = NativeFinalizer(HDF5Bindings().H5D.closePtr);
 
-  H5Dataset(this.file, this._name) : name = _name.split("/").last {
-    Pointer<Uint8> namePtr = strToChar(_name);
+  H5Dataset(this.file, this.fullName) : name = fullName.split("/").last {
+    Pointer<Uint8> namePtr = strToChar(fullName);
     datasetId = HDF5Bindings().H5D.open(file.fileId, namePtr, H5P_DEFAULT);
     print("creating dataset $name with id:: ${datasetId}");
 
@@ -38,10 +38,10 @@ class H5Dataset implements Finalizable {
     _finalizer.attach(this, Pointer.fromAddress(datasetId));
   }
 
-  H5Dataset.rawInit(this.file, this._name, this.datasetId)
+  H5Dataset.rawInit(this.file, this.fullName, this.datasetId)
       : attr = AttributeMgr(file, datasetId),
-        name = _name.split("/").last {
-    print("creating dataset $_name with id:: ${datasetId} (RAW INIT)");
+        name = fullName.split("/").last {
+    print("creating dataset $fullName with id:: ${datasetId} (RAW INIT)");
 
     Pointer<Int64> dsID = calloc<Int64>(1);
     dsID.value = datasetId;

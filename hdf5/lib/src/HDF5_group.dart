@@ -21,7 +21,6 @@ class H5Group implements Finalizable {
   H5Group(this.file, this.name) {
     Pointer<Uint8> namePtr = strToChar(name);
     groupId = HDF5Bindings().H5G.open(file.fileId, namePtr, H5P_DEFAULT);
-    print("creating group at $name with id:: ${groupId}");
 
     calloc.free(namePtr);
     attr = AttributeMgr(file, groupId);

@@ -98,10 +98,8 @@ ndarray readData(datasetId, dynamic idx) {
         offset.add(idx[i]);
         count.add(1);
       } else if (idx[i] is Slice) {
-        Slice sliceCpy = Slice(idx[i].start, idx[i].stop);
-        if (idx[i].start < 0) sliceCpy.start += dim[i];
-        if (idx[i].stop < 0) sliceCpy.stop += dim[i];
-        if (sliceCpy.start <= sliceCpy.stop && sliceCpy.stop < dim[i]) {
+        Slice sliceCpy = idx[i].getFormattedSlice(dim[i]);
+        if (sliceCpy.start <= sliceCpy.stop! && sliceCpy.stop! <= dim[i]) {
           offset.add(sliceCpy.start);
           count.add(sliceCpy.size);
           outputDim.add(sliceCpy.size);

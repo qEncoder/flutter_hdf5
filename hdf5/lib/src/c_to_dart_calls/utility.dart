@@ -14,11 +14,10 @@ Pointer<Uint8> strToChar(String string) {
   return stringPtr;
 }
 
-String charToString(Pointer<Uint8> charstr, {int lenStr = 0}) {
-  if (lenStr == 0) {
-    while (charstr[lenStr] != 0) {
-      lenStr++;
-    }
+String charToString(Pointer<Uint8> charstr, {maxLen = -1}) {
+  int lenStr = 0;
+  while (charstr[lenStr] != 0 && (maxLen == -1 || lenStr < maxLen)) {
+    lenStr++;
   }
 
   Uint8List stringList = Uint8List(lenStr);

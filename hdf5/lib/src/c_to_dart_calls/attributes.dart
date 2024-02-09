@@ -110,7 +110,7 @@ dynamic cAttrDataToDart(
         switch (spaceInfo.rank) {
           case 0:
             Pointer<Uint8> ptrCharData = Pointer.fromAddress(myData.address);
-            output = charToString(ptrCharData, lenStr: typeInfo.size);
+            output = charToString(ptrCharData);
             break;
           case 1:
             throw "Rank 1 Non-variable strings are currently not supported";

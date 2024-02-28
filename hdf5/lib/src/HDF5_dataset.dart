@@ -25,6 +25,7 @@ class H5Dataset implements Finalizable {
   H5Dataset(this.file, this.fullName) : name = fullName.split("/").last {
     Pointer<Uint8> namePtr = strToChar(fullName);
     datasetId = HDF5Bindings().H5D.open(file.fileId, namePtr, H5P_DEFAULT);
+    calloc.free(namePtr);
 
     attr = AttributeMgr(file, datasetId);
 
@@ -34,7 +35,8 @@ class H5Dataset implements Finalizable {
     shape = spaceInfo.dim;
     spaceInfo.dispose();
 
-    _finalizer.attach(this, Pointer.fromAddress(datasetId));
+    // TODO: enabling this causes memory corruption, solve this.
+    // _finalizer.attach(this, Pointer.fromAddress(datasetId));
   }
 
   H5Dataset.rawInit(this.file, this.fullName, this.datasetId)

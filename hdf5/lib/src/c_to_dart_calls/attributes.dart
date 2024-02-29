@@ -50,7 +50,7 @@ class CompoundMemberInfo {
   }
 }
 
-// TODO implement support for enum and array types.
+// TODO implement support for array types.
 dynamic readAttr(H5File file, int objId, String name) {
   HDF5Bindings HDF5lib = HDF5Bindings();
 
@@ -85,7 +85,6 @@ dynamic cAttrDataToDart(
   HDF5Bindings HDF5lib = HDF5Bindings();
 
   dynamic output;
-
   switch (typeInfo.type) {
     case H5T_STRING:
       if (HDF5lib.H5T.isVariableStr(typeInfo.nativeTypeId) > 0) {
@@ -121,6 +120,23 @@ dynamic cAttrDataToDart(
       break;
     case H5T_INTEGER:
       switch (typeInfo.size) {
+        case 1:
+          Pointer<Int8> integerList = myData.cast<Int8>();
+          switch (spaceInfo.rank) {
+            case 0:
+              output = integerList[0];
+              break;
+            case 1:
+              output = List<int>.empty(growable: true);
+              for (var i = 0; i < spaceInfo.dim[0]; i++) {
+                output.add(integerList[i]);
+              }
+              break;
+            default:
+              throw H5RankException(spaceInfo.rank);
+          }
+          break;
+
         case 4:
           Pointer<Int32> integerList = myData.cast<Int32>();
           switch (spaceInfo.rank) {
@@ -248,10 +264,35 @@ dynamic cAttrDataToDart(
           throw H5RankException(spaceInfo.rank);
       }
 
+    case H5T_ENUM:
+      Map enumDict = {};
+
+      int nMembers = HDF5lib.H5T.getNMembers(typeInfo.nativeTypeId);
+      TypeInfo enumTypeInfo = getTypeInfo(HDF5lib.H5T.getSuper(typeInfo.nativeTypeId));
+      SpaceInfo enumSpaceInfo = SpaceInfo(0, [], []);
+      
+      for (int i = 0; i < nMembers; i++) {
+        Pointer<Uint8> memberNamePtr = HDF5lib.H5T.getMemberName(typeInfo.nativeTypeId, i);
+        String enumValue = charToString(memberNamePtr);
+        HDF5lib.H5.freeMemory(memberNamePtr);
+        
+        Pointer enumKeyPtr = calloc<Uint8>(enumTypeInfo.size);
+        HDF5lib.H5T.getMemberValue(typeInfo.nativeTypeId, i, enumKeyPtr);
+        var enumKey = cAttrDataToDart(file, enumKeyPtr, enumTypeInfo, enumSpaceInfo);
+        calloc.free(enumKeyPtr);
+
+        enumDict[enumKey] = enumValue;
+      }
+      enumTypeInfo.dispose();
+      enumSpaceInfo.dispose();
+
+      var value = cAttrDataToDart(file, myData, enumTypeInfo, enumSpaceInfo);
+      return enumDict[value];
+    
     case H5T_ARRAY:
       throw "Array attributes currently not supported.";
 
-    case H5T_VLEN:
+    case H5T_VLEN :
       output = [];
       Pointer<hvl_t> dataPtr = Pointer.fromAddress(myData.address);
       TypeInfo VLEN_TYPE =

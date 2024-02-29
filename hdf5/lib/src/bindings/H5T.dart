@@ -78,6 +78,10 @@ typedef H5Tget_member_name_c = Pointer<Uint8> Function(
     Int64 type_id, Int64 membno);
 typedef H5Tget_member_name = Pointer<Uint8> Function(int type_id, int membno);
 
+typedef H5Tget_member_value_c = Int64 Function(
+    Int64 type_id, Uint64 membno, Pointer value);
+typedef H5Tget_member_value = int Function(int type_id, int membno, Pointer value);
+
 typedef H5Treclaim_c = Int64 Function(
     Int64 type_id, Int64 space_id, Int64 plist_id, Pointer buf);
 typedef H5Treclaim = int Function(
@@ -97,6 +101,7 @@ class H5TBindings {
   final H5Tget_member_class getMemberClass;
   final H5Tget_member_offset getMemberOffset;
   final H5Tget_member_name getMemberName;
+  final H5Tget_member_value getMemberValue;
   final H5Treclaim reclaim;
 
   H5TBindings(DynamicLibrary HDF5Lib)
@@ -136,6 +141,9 @@ class H5TBindings {
                 .asFunction(),
         getMemberName = HDF5Lib.lookup<NativeFunction<H5Tget_member_name_c>>(
                 'H5Tget_member_name')
+            .asFunction(),
+        getMemberValue = HDF5Lib.lookup<NativeFunction<H5Tget_member_value_c>>(
+                'H5Tget_member_value')
             .asFunction(),
         reclaim = HDF5Lib.lookup<NativeFunction<H5Treclaim_c>>('H5Treclaim')
             .asFunction();

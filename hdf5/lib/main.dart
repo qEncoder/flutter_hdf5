@@ -1,6 +1,33 @@
+import 'dart:ffi';
+import 'dart:isolate';
+
+import 'package:ffi/ffi.dart';
 import 'package:flutter/material.dart';
 import 'package:hdf5/hdf5.dart';
-void main() {
+import 'package:hdf5/src/bindings/HDF5_bindings.dart';
+import 'package:hdf5/src/c_to_dart_calls/dataset.dart';
+import 'package:hdf5/src/c_to_dart_calls/utility.dart';
+import 'package:numd/numd.dart' as nd;
+void main() async {
+    String fileName = "/Users/stephan/Library/Application Support/qdrive/data/3fa85f60-5617-4562-b3fc-2c963f66afa6/f49ab8c7-8a2e-481e-80d0-8c2a8e479519/7e9aa8b4-bd7f-4172-b692-fd9744429680/1709565700113/Measurement.hdf5";
+
+      H5File file = H5File.open(fileName);
+      H5Dataset dataset = file.openDataset("/counter");
+      
+    for (int i in nd.Range(1)){
+      // read2D_data_test();
+      dataset.refresh();
+      test2D_data_lib_functions(dataset);
+    }
+    // dataset.dispose();
+
+    //   print('waiting a bit');
+    //   // sleep for 1 second
+    //   await Future.delayed(const Duration(seconds: 1));
+
+    // }
+  await Isolate.run(() => isolate_function());
+
   runApp(const MyApp());
 }
 
@@ -69,6 +96,54 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   @override
+  void initState(){
+    super.initState();
+    
+    // print('opening file');
+    // // H5File file = H5File.open("/Users/stephan/Library/Application Support/qdrive/data/3fa85f60-5617-4562-b3fc-2c963f66afa6/7fa3f215-5cf8-4dcb-9a50-1d6849e6434d/37540f8c-f706-4fff-89e4-4eb3286d503a/1709538060761/Measurement.hdf5");
+    // // H5Dataset dataset = file.openDataset("/counter");
+    // var H5 = HDF5Bindings();
+    // String file = "/Users/stephan/Library/Application Support/qdrive/data/3fa85f60-5617-4562-b3fc-2c963f66afa6/7fa3f215-5cf8-4dcb-9a50-1d6849e6434d/37540f8c-f706-4fff-89e4-4eb3286d503a/1709538060761/Measurement.hdf5";
+    // Pointer<Uint8> file_name = strToChar(file);
+    // int file_id = H5.H5F.open(file_name, H5F_ACC_SWMR_READ, H5P_DEFAULT);
+    // calloc.free(file_name);
+
+    // Pointer<Uint8> ds_name = strToChar("/counter");
+    // int ds_id = H5.H5D.open(file_id, ds_name, H5P_DEFAULT);
+    // calloc.free(ds_name);
+    
+    // int space_id = H5.H5D.getSpace(ds_id);
+    // int data_type = H5.H5D.getType(ds_id);
+
+    // int ndims = H5.H5S.getSimpleExtentNdims(space_id);
+    // Pointer<Int64> dimPtr = calloc<Int64>(ndims);
+    // H5.H5S.getSimpleExtentDims(space_id, dimPtr, nullptr);
+    // List<int> dims = List.from(dimPtr.asTypedList(ndims));
+    // calloc.free(dimPtr);
+
+    // Pointer<Double> data = calloc<Double>(dims[0]);
+    // H5.H5D.read(ds_id, data_type, H5S_ALL, H5S_ALL, H5P_DEFAULT, data);
+    // // List<double> data_list = List.from(data.asTypedList(dims[0]));
+
+    // String data_str = "";
+    // for (int i = 0; i < dims[0]; i++) {
+    //   data_str += data[i].toString() + " ";
+    // }
+    // print(data_str);
+
+    // calloc.free(data);
+    // // print(data_list);
+
+    // H5.H5D.close(ds_id);
+    // H5.H5T.close(data_type);
+    // H5.H5S.close(space_id);
+    // H5.H5F.close(file_id);
+    
+    
+    // print('file opened');
+  }
+
+  @override
   Widget build(BuildContext context) {
     // This method is rerun every time setState is called, for instance as done
     // by the _incrementCounter method above.
@@ -77,7 +152,7 @@ class _MyHomePageState extends State<MyHomePage> {
     // fast, so that you can just rebuild anything that needs updating rather
     // than having to individually change instances of widgets.
     print('opening file');
-    H5File file = H5File.open("test.hdf5");
+    // H5File file = H5File.open("test.hdf5");
     return Scaffold(
       appBar: AppBar(
         // TRY THIS: Try changing the color here to a specific color (to
@@ -124,4 +199,92 @@ class _MyHomePageState extends State<MyHomePage> {
       ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
+}
+
+void read2D_data_test(){
+  print("starting test");
+  var H5 = HDF5Bindings();
+    String file = "/Users/stephan/Library/Application Support/qdrive/data/3fa85f60-5617-4562-b3fc-2c963f66afa6/c0f34c86-8f37-4b64-8189-9a92647cb111/94e97f7f-304a-48ea-a462-2b66d111c945/1709557890995/Measurement.hdf5";
+    Pointer<Uint8> file_name = strToChar(file);
+    int file_id = H5.H5F.open(file_name, H5F_ACC_SWMR_READ, H5P_DEFAULT);
+    calloc.free(file_name);
+
+    Pointer<Uint8> ds_name = strToChar("/counter");
+    int ds_id = H5.H5D.open(file_id, ds_name, H5P_DEFAULT);
+    calloc.free(ds_name);
+    
+    int space_id = H5.H5D.getSpace(ds_id);
+    int data_type = H5.H5D.getType(ds_id);
+
+    int ndims = H5.H5S.getSimpleExtentNdims(space_id);
+    Pointer<Int64> dimPtr = calloc<Int64>(ndims);
+    H5.H5S.getSimpleExtentDims(space_id, dimPtr, nullptr);
+    List<int> dims = List.from(dimPtr.asTypedList(ndims));
+    calloc.free(dimPtr);
+
+    List<int> outputDim = [31, 31];
+
+    Pointer<Int64> dimMS = nd.intListToCArray(outputDim);
+    int memSpaceId =  H5.H5S.createSimple(outputDim.length, dimMS, nullptr);
+
+    Pointer<Int64> dimDS = nd.intListToCArray(dims);
+    int fileSpaceId = H5.H5S.createSimple(ndims, dimDS, nullptr);
+
+    Pointer<Int64> offsetDS = IntListToPtrArr([0,0]);
+    Pointer<Int64> countDS = IntListToPtrArr(outputDim);
+    H5.H5S.selectHyperslab(fileSpaceId, H5S_SELECT_SET, offsetDS, nullptr, countDS, nullptr);
+    print("made hyperslab");
+    int size = 1;
+    for (int i in outputDim){
+      size *= i;
+    } 
+
+    Pointer<Double> data = calloc<Double>(size);
+    H5.H5D.read(ds_id, data_type, memSpaceId, fileSpaceId, H5P_DEFAULT, data);
+    List<double> data_list = List.from(data.asTypedList(dims[0]));
+
+    String data_str = "";
+    for (int i = 0; i < outputDim[0]; i++) {
+      data_str += data[i].toString() + " ";
+    }
+    data_str += "\n";
+    for (int i = 0; i < dims[0]; i++) {
+      data_str += data[i + outputDim[1]].toString() + " ";
+    }
+    print(data_str);
+
+    calloc.free(data);
+
+    H5.H5D.close(ds_id);
+    H5.H5T.close(data_type);
+    H5.H5S.close(space_id);
+    H5.H5F.close(file_id);
+}
+
+void isolate_function() async{
+    String fileName = "/Users/stephan/Library/Application Support/qdrive/data/3fa85f60-5617-4562-b3fc-2c963f66afa6/f49ab8c7-8a2e-481e-80d0-8c2a8e479519/7e9aa8b4-bd7f-4172-b692-fd9744429680/1709565700113/Measurement.hdf5";
+
+      H5File file = H5File.open(fileName);
+      H5Dataset dataset = file.openDataset("/counter");
+      
+    for (int i in nd.Range(10)){
+      // read2D_data_test();
+      dataset.refresh();
+      test2D_data_lib_functions(dataset);
+
+      print('waiting a bit');
+      // sleep for 1 second
+      await Future.delayed(const Duration(seconds: 1));
+
+    }
+}
+
+void test2D_data_lib_functions(H5Dataset dataset){
+      
+      print(dataset.attr.attrNames);
+      print(dataset.attr["__cursor"]);
+      print(dataset.attr["__shape"]);
+      var out = dataset[[nd.Slice(0, 30), nd.Slice(0,30)]];
+      print(out[[0,0]]);
+
 }

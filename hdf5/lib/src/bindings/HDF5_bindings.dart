@@ -63,12 +63,14 @@ export 'H5S.dart'
 export 'H5R.dart'
     show H5R_BADTYPE, H5R_OBJECT, H5R_DATASET_REGION, H5R_MAXTYPE, H5R_type_t;
 
+
 import 'H5.dart';
 import 'H5A.dart';
 import 'H5D.dart';
 import 'H5F.dart';
 import 'H5G.dart';
 import 'H5L.dart';
+import 'H5P.dart';
 import 'H5S.dart';
 import 'H5T.dart';
 import 'H5O.dart';
@@ -82,6 +84,7 @@ class HDF5Bindings {
   late final H5FBindings H5F;
   late final H5GBindings H5G;
   late final H5LBindings H5L;
+  late final H5PBindings H5P;
   late final H5SBindings H5S;
   late final H5TBindings H5T;
   late final H5OBindings H5O;
@@ -109,6 +112,7 @@ class HDF5Bindings {
     H5F = H5FBindings(HDF5Lib);
     H5G = H5GBindings(HDF5Lib);
     H5L = H5LBindings(HDF5Lib);
+    H5P = H5PBindings(HDF5Lib);
     H5S = H5SBindings(HDF5Lib);
     H5T = H5TBindings(HDF5Lib);
     H5O = H5OBindings(HDF5Lib);

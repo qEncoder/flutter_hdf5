@@ -13,8 +13,8 @@ class H5Dataset implements Finalizable {
   final String fullName;
   final String name;
 
-  late final int ndim;
-  late final List<int> shape;
+  late int ndim;
+  late List<int> shape;
 
   late final int datasetId;
 
@@ -24,6 +24,8 @@ class H5Dataset implements Finalizable {
 
   H5Dataset(this.file, this.fullName) : name = fullName.split("/").last {
     Pointer<Uint8> namePtr = strToChar(fullName);
+    
+
     datasetId = HDF5Bindings().H5D.open(file.fileId, namePtr, H5P_DEFAULT);
     calloc.free(namePtr);
 
@@ -47,9 +49,24 @@ class H5Dataset implements Finalizable {
     _finalizer.attach(this, dsID.cast());
   }
 
+  void dispose(){
+    HDF5Bindings().H5D.close(datasetId);
+  }
+
+  void refresh() {
+    int out = HDF5Bindings().H5D.refresh(datasetId);
+    
+    int spaceId = HDF5Bindings().H5D.getSpace(datasetId);
+    SpaceInfo spaceInfo = getSpaceInfo(spaceId);
+    ndim = spaceInfo.rank;
+    shape = spaceInfo.dim;
+    spaceInfo.dispose();
+  }
+
   dynamic getData() {
     return readData(datasetId, []);
   }
+
 
   dynamic operator [](dynamic idx) {
     return readData(datasetId, idx);

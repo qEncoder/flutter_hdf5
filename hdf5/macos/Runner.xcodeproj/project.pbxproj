@@ -32,6 +32,9 @@
 		D42EA3C22B30664600846522 /* libhdf5.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D42EA3C12B30664600846522 /* libhdf5.dylib */; settings = {ATTRIBUTES = (Weak, ); }; };
 		D42EA3C32B30665800846522 /* libhdf5.dylib in Resources */ = {isa = PBXBuildFile; fileRef = D42EA3C12B30664600846522 /* libhdf5.dylib */; };
 		D42EA3C42B30666100846522 /* libhdf5.dylib in Bundle Framework */ = {isa = PBXBuildFile; fileRef = D42EA3C12B30664600846522 /* libhdf5.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		D445A6272B95BB86006ACCBA /* libnumd_c_libs.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D445A6262B95BB86006ACCBA /* libnumd_c_libs.dylib */; settings = {ATTRIBUTES = (Weak, ); }; };
+		D445A6282B95BB93006ACCBA /* libnumd_c_libs.dylib in Resources */ = {isa = PBXBuildFile; fileRef = D445A6262B95BB86006ACCBA /* libnumd_c_libs.dylib */; };
+		D445A6292B95BB9A006ACCBA /* libnumd_c_libs.dylib in Bundle Framework */ = {isa = PBXBuildFile; fileRef = D445A6262B95BB86006ACCBA /* libnumd_c_libs.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -58,6 +61,7 @@
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
+				D445A6292B95BB9A006ACCBA /* libnumd_c_libs.dylib in Bundle Framework */,
 				D42EA3C42B30666100846522 /* libhdf5.dylib in Bundle Framework */,
 			);
 			name = "Bundle Framework";
@@ -91,6 +95,7 @@
 		B820610C8F31B00231CDA4D9 /* Pods-Runner.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.release.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.release.xcconfig"; sourceTree = "<group>"; };
 		D377FF240C2329E3B368DB89 /* Pods-Runner.profile.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.profile.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.profile.xcconfig"; sourceTree = "<group>"; };
 		D42EA3C12B30664600846522 /* libhdf5.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libhdf5.dylib; path = Resources/libhdf5.dylib; sourceTree = "<group>"; };
+		D445A6262B95BB86006ACCBA /* libnumd_c_libs.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libnumd_c_libs.dylib; path = Resources/libnumd_c_libs.dylib; sourceTree = "<group>"; };
 		DD032C3FC49D629BA304DF4C /* Pods-Runner.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.debug.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.debug.xcconfig"; sourceTree = "<group>"; };
 		EC9276C2F1981F0746DCB96D /* Pods_Runner.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Runner.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -109,6 +114,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				D42EA3C22B30664600846522 /* libhdf5.dylib in Frameworks */,
+				D445A6272B95BB86006ACCBA /* libnumd_c_libs.dylib in Frameworks */,
 				908C3BA78CCBC473BEDB9663 /* Pods_Runner.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -138,6 +144,7 @@
 		33CC10E42044A3C60003C045 = {
 			isa = PBXGroup;
 			children = (
+				D445A6262B95BB86006ACCBA /* libnumd_c_libs.dylib */,
 				33FAB671232836740065AC1E /* Runner */,
 				33CEB47122A05771004F2AC0 /* Flutter */,
 				331C80D6294CF71000263BE5 /* RunnerTests */,
@@ -201,7 +208,6 @@
 				75FFB9CF86F710DDACDCD6E8 /* Pods-RunnerTests.release.xcconfig */,
 				79C29C1EF8564EB55CC4D6B4 /* Pods-RunnerTests.profile.xcconfig */,
 			);
-			name = Pods;
 			path = Pods;
 			sourceTree = "<group>";
 		};
@@ -323,6 +329,7 @@
 				33CC10F32044A3C60003C045 /* Assets.xcassets in Resources */,
 				33CC10F62044A3C60003C045 /* MainMenu.xib in Resources */,
 				D42EA3C32B30665800846522 /* libhdf5.dylib in Resources */,
+				D445A6282B95BB93006ACCBA /* libnumd_c_libs.dylib in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -28,10 +28,9 @@ SpaceInfo getSpaceInfo(int spaceId) {
     Pointer<Int64> maxDimPtr = calloc<Int64>(rank);
     HDF5lib.H5S.getSimpleExtentDims(spaceId, dimPtr, maxDimPtr);
 
-    for (var i = 0; i < rank; i++) {
-      dim.add(dimPtr[i]);
-      maxDim.add(dimPtr[i]);
-    }
+    dim = List.from(dimPtr.asTypedList(rank));
+    maxDim = List.from(maxDimPtr.asTypedList(rank));
+    
     calloc.free(dimPtr);
     calloc.free(maxDimPtr);
   }

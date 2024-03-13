@@ -63,7 +63,6 @@ export 'H5S.dart'
 export 'H5R.dart'
     show H5R_BADTYPE, H5R_OBJECT, H5R_DATASET_REGION, H5R_MAXTYPE, H5R_type_t;
 
-
 import 'H5.dart';
 import 'H5A.dart';
 import 'H5D.dart';
@@ -101,7 +100,7 @@ class HDF5Bindings {
     if (Platform.isMacOS) {
       libraryPath = 'libHDF5.dylib';
     } else if (Platform.isWindows) {
-      libraryPath = 'HDF5.dll';
+      libraryPath = 'hdf5.dll';
     }
 
     final DynamicLibrary HDF5Lib = DynamicLibrary.open(libraryPath);

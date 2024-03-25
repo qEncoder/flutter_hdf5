@@ -1,5 +1,6 @@
 import 'package:hdf5/src/HDF5_dataset.dart';
 import 'package:hdf5/src/HDF5_group.dart';
+import 'package:hdf5/src/bindings/H5FD.dart';
 import 'package:hdf5/src/bindings/HDF5_bindings.dart';
 import 'package:hdf5/src/c_to_dart_calls/utility.dart';
 
@@ -18,6 +19,36 @@ class H5File implements Finalizable {
     calloc.free(namePtr);
 
     _finalizer.attach(this, Pointer.fromAddress(fileId));
+  }
+
+  H5File.openROS3(String url, String aws_region, String secret_id, String secret_key, 
+                  {String token = ""}) : fileName = url {
+    HDF5Bindings b = HDF5Bindings();
+    int fapl_id = b.H5P.create(b.H5P.FILE_ACCESS);
+
+    Pointer<H5FD_ros3_fapl_t> fa = calloc<H5FD_ros3_fapl_t>(1);
+    fa[0].version = 1;
+    fa[0].authenticate = true;
+    fa[0].aws_region = strToArray(aws_region, 32+1);
+    fa[0].secret_id = strToArray(secret_id, 128+1);
+    fa[0].secret_key = strToArray(secret_key, 128+1);
+
+    b.H5P.setFaplRos3(fapl_id, fa);
+
+    if (token.isNotEmpty){
+      Pointer<Uint8> tokenPtr = strToChar(token);
+      b.H5P.setFaplRos3Token(fapl_id, tokenPtr);
+      calloc.free(tokenPtr);
+    }
+
+    Pointer<Uint8> urlPtr = strToChar(url);
+    fileId = HDF5Bindings().H5F.open(urlPtr, H5F_ACC_RDONLY, fapl_id);
+    calloc.free(urlPtr);
+    calloc.free(fa);
+    b.H5P.close(fapl_id);
+
+    _finalizer.attach(this, Pointer.fromAddress(fileId));
+
   }
 
   H5Group get group {

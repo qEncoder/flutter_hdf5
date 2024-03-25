@@ -29,6 +29,19 @@ String charToString(Pointer<Uint8> charstr, {maxLen = -1}) {
   return String.fromCharCodes(stringList);
 }
 
+Array<Uint8> strToArray(String string, int size) {
+  if (string.length + 1 > size) {
+    throw Exception("String is longer than expected size");
+  }
+  final arr = Array<Uint8>(size);
+  for (var i = 0; i < string.length; i++) {
+    arr[i] = string.codeUnitAt(i);
+  }
+  arr[string.length] = 0;
+  return arr;
+
+}
+
 Pointer<Int64> IntListToPtrArr(List<int> input) {
   Pointer<Int64> arr = calloc<Int64>(input.length);
   for (var i = 0; i < input.length; i++) {

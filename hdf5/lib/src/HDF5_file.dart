@@ -24,14 +24,15 @@ class H5File implements Finalizable {
   H5File.openROS3(String url, String aws_region, String secret_id, String secret_key, 
                   {String token = ""}) : fileName = url {
     HDF5Bindings b = HDF5Bindings();
+
     int fapl_id = b.H5P.create(b.H5P.FILE_ACCESS);
 
     Pointer<H5FD_ros3_fapl_t> fa = calloc<H5FD_ros3_fapl_t>(1);
     fa[0].version = 1;
     fa[0].authenticate = true;
-    fa[0].aws_region = strToArray(aws_region, 32+1);
-    fa[0].secret_id = strToArray(secret_id, 128+1);
-    fa[0].secret_key = strToArray(secret_key, 128+1);
+    strToArray(aws_region, fa[0].aws_region, 32+1);
+    strToArray(secret_id, fa[0].secret_id, 128+1);
+    strToArray(secret_key, fa[0].secret_key, 128+1);
 
     b.H5P.setFaplRos3(fapl_id, fa);
 

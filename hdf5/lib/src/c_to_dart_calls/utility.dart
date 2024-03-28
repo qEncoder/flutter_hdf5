@@ -29,16 +29,15 @@ String charToString(Pointer<Uint8> charstr, {maxLen = -1}) {
   return String.fromCharCodes(stringList);
 }
 
-Array<Uint8> strToArray(String string, int size) {
+void strToArray(String string, Array<Uint8> array, int size) {
   if (string.length + 1 > size) {
     throw Exception("String is longer than expected size");
   }
-  final arr = Array<Uint8>(size);
+
   for (var i = 0; i < string.length; i++) {
-    arr[i] = string.codeUnitAt(i);
+    array[i] = string.codeUnitAt(i);
   }
-  arr[string.length] = 0;
-  return arr;
+  array[string.length] = 0;
 
 }
 

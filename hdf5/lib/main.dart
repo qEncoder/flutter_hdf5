@@ -9,16 +9,16 @@ import 'package:hdf5/src/c_to_dart_calls/dataset.dart';
 import 'package:hdf5/src/c_to_dart_calls/utility.dart';
 import 'package:numd/numd.dart' as nd;
 void main() async {
-    String fileName = "/Users/stephan/Library/Application Support/qdrive/data/3fa85f60-5617-4562-b3fc-2c963f66afa6/f49ab8c7-8a2e-481e-80d0-8c2a8e479519/7e9aa8b4-bd7f-4172-b692-fd9744429680/1709565700113/Measurement.hdf5";
+    // String fileName = "/Users/stephan/Library/Application Support/qdrive/data/3fa85f60-5617-4562-b3fc-2c963f66afa6/f49ab8c7-8a2e-481e-80d0-8c2a8e479519/7e9aa8b4-bd7f-4172-b692-fd9744429680/1709565700113/Measurement.hdf5";
 
-      H5File file = H5File.open(fileName);
-      H5Dataset dataset = file.openDataset("/counter");
+    //   H5File file = H5File.open(fileName);
+    //   H5Dataset dataset = file.openDataset("/counter");
       
-    for (int i in nd.Range(1)){
-      // read2D_data_test();
-      dataset.refresh();
-      test2D_data_lib_functions(dataset);
-    }
+    // for (int i in nd.Range(1)){
+    //   // read2D_data_test();
+    //   dataset.refresh();
+    //   test2D_data_lib_functions(dataset);
+    // }
     // dataset.dispose();
 
     //   print('waiting a bit');
@@ -26,8 +26,8 @@ void main() async {
     //   await Future.delayed(const Duration(seconds: 1));
 
     // }
-  await Isolate.run(() => isolate_function());
-
+  // await Isolate.run(() => isolate_function());
+  test_S3_read();
   runApp(const MyApp());
 }
 
@@ -286,5 +286,17 @@ void test2D_data_lib_functions(H5Dataset dataset){
       print(dataset.attr["__shape"]);
       var out = dataset[[nd.Slice(0, 30), nd.Slice(0,30)]];
       print(out[[0,0]]);
+
+}
+
+void test_S3_read(){
+  String file = "https://s3.eu-central-1.amazonaws.com/qdrive-test-bucket/test_file/test.hdf5";
+  String aws_region = "eu-central-1";
+  String secret_id = "AKIAVRUVT3UJHHOM4GKA";
+  String secret_key = "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";
+
+  H5File h5file = H5File.openROS3(file, aws_region, secret_id, secret_key);
+  H5Group group = h5file.group;
+  print(group.datasets);
 
 }

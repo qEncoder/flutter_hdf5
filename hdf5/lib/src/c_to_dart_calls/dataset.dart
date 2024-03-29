@@ -1,4 +1,3 @@
-import 'package:hdf5/src/bindings/H5D.dart';
 import 'package:hdf5/src/bindings/HDF5_bindings.dart';
 import 'package:hdf5/src/c_to_dart_calls/type_info.dart';
 import 'package:hdf5/src/c_to_dart_calls/space_info.dart';

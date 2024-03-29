@@ -54,7 +54,7 @@ class H5Dataset implements Finalizable {
   }
 
   void refresh() {
-    int out = HDF5Bindings().H5D.refresh(datasetId);
+    HDF5Bindings().H5D.refresh(datasetId);
     
     int spaceId = HDF5Bindings().H5D.getSpace(datasetId);
     SpaceInfo spaceInfo = getSpaceInfo(spaceId);

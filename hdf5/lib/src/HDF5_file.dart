@@ -16,6 +16,9 @@ class H5File implements Finalizable {
   H5File.open(this.fileName) {
     Pointer<Uint8> namePtr = strToChar(fileName);
     fileId = HDF5Bindings().H5F.open(namePtr, H5F_ACC_SWMR_READ, H5P_DEFAULT);
+    if (fileId < 0){
+      throw Exception("Failed to open file $fileName");
+    }
     calloc.free(namePtr);
 
     _finalizer.attach(this, Pointer.fromAddress(fileId));
@@ -49,7 +52,6 @@ class H5File implements Finalizable {
     b.H5P.close(fapl_id);
 
     _finalizer.attach(this, Pointer.fromAddress(fileId));
-
   }
 
   H5Group get group {

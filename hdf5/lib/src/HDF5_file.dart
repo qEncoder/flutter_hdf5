@@ -21,7 +21,7 @@ class H5File implements Finalizable {
     }
     calloc.free(namePtr);
 
-    _finalizer.attach(this, Pointer.fromAddress(fileId));
+    // _finalizer.attach(this, Pointer.fromAddress(fileId));
   }
 
   H5File.openROS3(String url, String aws_region, String secret_id, String secret_key, 
@@ -51,7 +51,7 @@ class H5File implements Finalizable {
     calloc.free(fa);
     b.H5P.close(fapl_id);
 
-    _finalizer.attach(this, Pointer.fromAddress(fileId));
+    // _finalizer.attach(this, Pointer.fromAddress(fileId));
   }
 
   H5Group get group {

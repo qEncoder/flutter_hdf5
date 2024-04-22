@@ -27,14 +27,14 @@ class H5Group implements Finalizable {
     groups = getGroupItems(groupId, H5O_TYPE_GROUP);
     datasets = getGroupItems(groupId, H5O_TYPE_DATASET);
 
-    _finalizer.attach(this, Pointer.fromAddress(groupId));
+    // _finalizer.attach(this, Pointer.fromAddress(groupId));
   }
 
   H5Group.rawInit(this.file, this.name, this.groupId)
       : attr = AttributeMgr(file, groupId),
         groups = getGroupItems(groupId, H5O_TYPE_GROUP),
         datasets = getGroupItems(groupId, H5O_TYPE_DATASET) {
-    _finalizer.attach(this, Pointer.fromAddress(groupId));
+    // _finalizer.attach(this, Pointer.fromAddress(groupId));
   }
 
   dynamic operator [](String key) {

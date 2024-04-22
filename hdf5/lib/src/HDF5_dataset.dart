@@ -46,7 +46,7 @@ class H5Dataset implements Finalizable {
         name = fullName.split("/").last {
     Pointer<Int64> dsID = calloc<Int64>(1);
     dsID.value = datasetId;
-    _finalizer.attach(this, dsID.cast());
+    // _finalizer.attach(this, dsID.cast());
   }
 
   void dispose(){

@@ -48,35 +48,98 @@ typedef H5Drefresh_c = Int64 Function(Int64 dset_id);
 typedef H5Drefresh = int Function(int dset_id);
 
 class H5DBindings {
-  final H5Dopen open;
-  final H5Dclose close;
-  final Pointer<NativeFunction<Void Function(Pointer<Void>)>> closePtr;
+  final H5Dopen __open;
+  final H5Dclose __close;
 
-  final H5Dget_space getSpace;
-  final H5Dget_type getType;
-  final H5Dget_create_plist getCreatePlist;
-  final H5Dget_access_plist getAccessPlist;
-  final H5Dread read;
-  final H5Drefresh refresh;
+  final H5Dget_space __getSpace;
+  final H5Dget_type __getType;
+  final H5Dget_create_plist __getCreatePlist;
+  final H5Dget_access_plist __getAccessPlist;
+  final H5Dread __read;
+  final H5Drefresh __refresh;
 
   H5DBindings(DynamicLibrary HDF5Lib)
-      : open =
+      : __open =
             HDF5Lib.lookup<NativeFunction<H5Dopen_c>>('H5Dopen2').asFunction(),
-        close =
+        __close =
             HDF5Lib.lookup<NativeFunction<H5Dclose_c>>('H5Dclose').asFunction(),
-        closePtr = HDF5Lib.lookup<NativeFunction<H5DcloseNative>>('H5Dclose'),
-        getSpace =
+        __getSpace =
             HDF5Lib.lookup<NativeFunction<H5Dget_space_c>>('H5Dget_space')
                 .asFunction(),
-        getType = HDF5Lib.lookup<NativeFunction<H5Dget_type_c>>('H5Dget_type')
+        __getType = HDF5Lib.lookup<NativeFunction<H5Dget_type_c>>('H5Dget_type')
             .asFunction(),
-        getCreatePlist = HDF5Lib.lookup<NativeFunction<H5Dget_create_plist_c>>(
+        __getCreatePlist = HDF5Lib.lookup<NativeFunction<H5Dget_create_plist_c>>(
                 'H5Dget_create_plist')
             .asFunction(),
-        getAccessPlist = HDF5Lib.lookup<NativeFunction<H5Dget_access_plist_c>>(
+        __getAccessPlist = HDF5Lib.lookup<NativeFunction<H5Dget_access_plist_c>>(
                 'H5Dget_access_plist').asFunction(),
-        read =
+        __read =
             HDF5Lib.lookup<NativeFunction<H5Dread_c>>('H5Dread').asFunction(),
-        refresh = HDF5Lib.lookup<NativeFunction<H5Drefresh_c>>('H5Drefresh').asFunction();
+        __refresh = HDF5Lib.lookup<NativeFunction<H5Drefresh_c>>('H5Drefresh').asFunction();
+  
+  int open(int loc_id, Pointer<Uint8> name, int lapl_id) {
+    final id = __open(loc_id, name, lapl_id);
+    if (id < 0) {
+      throw Exception("Failed to open dataset");
+    }
+    return id;
+  }
+
+  int close(int dset_id) {
+    final status = __close(dset_id);
+    if (status < 0) {
+      throw Exception("Failed to close dataset");
+    }
+    return status;
+  }
+
+  int getSpace(int dset_id) {
+    final space = __getSpace(dset_id);
+    if (space < 0) {
+      throw Exception("Failed to get dataspace");
+    }
+    return space;
+  }
+
+  int getType(int dset_id) {
+    final type = __getType(dset_id);
+    if (type < 0) {
+      throw Exception("Failed to get datatype");
+    }
+    return type;
+  }
+
+  int getCreatePlist(int dset_id) {
+    final plist = __getCreatePlist(dset_id);
+    if (plist < 0) {
+      throw Exception("Failed to get create property list");
+    }
+    return plist;
+  }
+
+  int getAccessPlist(int dset_id) {
+    final plist = __getAccessPlist(dset_id);
+    if (plist < 0) {
+      throw Exception("Failed to get access property list");
+    }
+    return plist;
+  }
+
+  int read(int dset_id, int mem_type_id, int mem_space_id, int file_space_id,
+      int dxpl_id, Pointer buf) {
+    final status = __read(dset_id, mem_type_id, mem_space_id, file_space_id, dxpl_id, buf);
+    if (status < 0) {
+      throw Exception("Failed to read dataset");
+    }
+    return status;
+  }
+
+  int refresh(int dset_id) {
+    final status = __refresh(dset_id);
+    if (status < 0) {
+      throw Exception("Failed to refresh dataset");
+    }
+    return status;
+  }
         
 }

@@ -1,4 +1,7 @@
 import 'dart:ffi';
+import 'package:ffi/ffi.dart';
+
+import 'package:hdf5/src/c_to_dart_calls/utility.dart';
 
 const int H5F_ACC_RDONLY = 0; // Allows read-only access to file
 const int H5F_ACC_RDWR = 1; //  Allows read and write access to file
@@ -18,14 +21,29 @@ typedef H5Fclose = int Function(int file_id);
 typedef H5FcloseNative = Void Function(Pointer<void> attr_id);
 
 class H5FBindings {
-  final H5Fopen open;
-  final H5Fclose close;
-  final Pointer<NativeFunction<Void Function(Pointer<Void>)>> closePtr;
+  final H5Fopen __open;
+  final H5Fclose __close;
 
   H5FBindings(DynamicLibrary HDF5Lib)
-      : open =
+      : __open =
             HDF5Lib.lookup<NativeFunction<H5Fopen_c>>('H5Fopen').asFunction(),
-        close =
-            HDF5Lib.lookup<NativeFunction<H5Fclose_c>>('H5Fclose').asFunction(),
-        closePtr = HDF5Lib.lookup<NativeFunction<H5FcloseNative>>('H5Fclose');
+        __close =
+            HDF5Lib.lookup<NativeFunction<H5Fclose_c>>('H5Fclose').asFunction();  
+  int open(String fileName, int flags, int fapl_id) {
+    Pointer<Uint8> namePtr = strToChar(fileName);
+    final id = __open(namePtr, flags, fapl_id);
+    calloc.free(namePtr);
+
+    if (id < 0) {
+      throw Exception('Failed to open file');
+    }
+    return id;
+  }
+
+  void close(int file_id) {
+    final status = __close(file_id);
+    if (status < 0) {
+      throw Exception('Failed to close file');
+    }
+  }
 }

@@ -8,10 +8,7 @@ class TypeInfo implements Finalizable {
   int size;
   int typeId;
 
-  // static final _finalizer = NativeFinalizer(HDF5Bindings().H5T.closePtr);
-
   TypeInfo(this.type, this.nativeTypeId, this.size, {this.typeId = -1}) {
-    // _finalizer.attach(this, Pointer.fromAddress(nativeTypeId));
   }
 
   void dispose() {

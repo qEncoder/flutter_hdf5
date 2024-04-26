@@ -1,11 +1,9 @@
 import 'dart:ffi';
-import 'dart:isolate';
 
 import 'package:ffi/ffi.dart';
 import 'package:flutter/material.dart';
 import 'package:hdf5/hdf5.dart';
 import 'package:hdf5/src/bindings/HDF5_bindings.dart';
-import 'package:hdf5/src/c_to_dart_calls/dataset.dart';
 import 'package:hdf5/src/c_to_dart_calls/utility.dart';
 import 'package:numd/numd.dart' as nd;
 
@@ -164,9 +162,7 @@ void read2D_data_test() {
   var H5 = HDF5Bindings();
   String file =
       "/Users/stephan/Library/Application Support/qdrive/data/3fa85f60-5617-4562-b3fc-2c963f66afa6/c0f34c86-8f37-4b64-8189-9a92647cb111/94e97f7f-304a-48ea-a462-2b66d111c945/1709557890995/Measurement.hdf5";
-  Pointer<Uint8> file_name = strToChar(file);
-  int file_id = H5.H5F.open(file_name, H5F_ACC_SWMR_READ, H5P_DEFAULT);
-  calloc.free(file_name);
+  int file_id = H5.H5F.open(file, H5F_ACC_SWMR_READ, H5P_DEFAULT);
 
   Pointer<Uint8> ds_name = strToChar("/counter");
   int ds_id = H5.H5D.open(file_id, ds_name, H5P_DEFAULT);
@@ -177,22 +173,21 @@ void read2D_data_test() {
 
   int ndims = H5.H5S.getSimpleExtentNdims(space_id);
   Pointer<Int64> dimPtr = calloc<Int64>(ndims);
-  H5.H5S.getSimpleExtentDims(space_id, dimPtr, nullptr);
+  H5.H5S.getSimpleExtentDims(space_id, ndims);
   List<int> dims = List.from(dimPtr.asTypedList(ndims));
   calloc.free(dimPtr);
 
   List<int> outputDim = [31, 31];
 
   Pointer<Int64> dimMS = nd.intListToCArray(outputDim);
-  int memSpaceId = H5.H5S.createSimple(outputDim.length, dimMS, nullptr);
+  int memSpaceId = H5.H5S.createSimple(outputDim);
 
   Pointer<Int64> dimDS = nd.intListToCArray(dims);
-  int fileSpaceId = H5.H5S.createSimple(ndims, dimDS, nullptr);
+  int fileSpaceId = H5.H5S.createSimple(dims);
 
   Pointer<Int64> offsetDS = IntListToPtrArr([0, 0]);
   Pointer<Int64> countDS = IntListToPtrArr(outputDim);
-  H5.H5S.selectHyperslab(
-      fileSpaceId, H5S_SELECT_SET, offsetDS, nullptr, countDS, nullptr);
+  H5.H5S.selectHyperslab(fileSpaceId, [0, 0], outputDim);
   print("made hyperslab");
   int size = 1;
   for (int i in outputDim) {

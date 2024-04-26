@@ -1,4 +1,6 @@
 import 'dart:ffi';
+import 'package:ffi/ffi.dart';
+import 'package:numd/numd.dart';
 
 const int H5S_ALL = 0; // /* (hid_t) */
 
@@ -46,30 +48,84 @@ typedef H5Sselect_hyperslab = int Function(
     Pointer<Int64> block);
 
 class H5SBindings {
-  final H5Sclose close;
-  final Pointer<NativeFunction<Void Function(Pointer<Void>)>> closePtr;
-  final H5Sget_simple_extent_ndims getSimpleExtentNdims;
-  final H5Sget_simple_extent_dims getSimpleExtentDims;
-  final H5Screate_simple createSimple;
-  final H5Sselect_hyperslab selectHyperslab;
+  final H5Sclose __close;
+  final H5Sget_simple_extent_ndims __getSimpleExtentNdims;
+  final H5Sget_simple_extent_dims __getSimpleExtentDims;
+  final H5Screate_simple __createSimple;
+  final H5Sselect_hyperslab __selectHyperslab;
 
   H5SBindings(DynamicLibrary HDF5Lib)
-      : close =
+      : __close =
             HDF5Lib.lookup<NativeFunction<H5Sclose_c>>('H5Sclose').asFunction(),
-        closePtr = HDF5Lib.lookup<NativeFunction<Void Function(Pointer<Void>)>>(
-            'H5Sclose'),
-        getSimpleExtentNdims =
+        __getSimpleExtentNdims =
             HDF5Lib.lookup<NativeFunction<H5Sget_simple_extent_ndims_c>>(
                     'H5Sget_simple_extent_ndims')
                 .asFunction(),
-        getSimpleExtentDims =
+        __getSimpleExtentDims =
             HDF5Lib.lookup<NativeFunction<H5Sget_simple_extent_dims_c>>(
                     'H5Sget_simple_extent_dims')
                 .asFunction(),
-        createSimple = HDF5Lib.lookup<NativeFunction<H5Screate_simple_c>>(
+        __createSimple = HDF5Lib.lookup<NativeFunction<H5Screate_simple_c>>(
                 'H5Screate_simple')
             .asFunction(),
-        selectHyperslab = HDF5Lib.lookup<NativeFunction<H5Sselect_hyperslab_c>>(
+        __selectHyperslab = HDF5Lib.lookup<NativeFunction<H5Sselect_hyperslab_c>>(
                 'H5Sselect_hyperslab')
             .asFunction();
+  
+  void close(int space_id) {
+    final status = __close(space_id);
+    if (status < 0) {
+      throw Exception('Failed to close space');
+    }
+  }
+
+  int getSimpleExtentNdims(int space_id) {
+    final rank = __getSimpleExtentNdims(space_id);
+    if (rank < 0) {
+      throw Exception('Failed to get rank of dataspace');
+    }
+    return rank;
+  }
+
+  (List<int>, List<int>) getSimpleExtentDims(int space_id, int rank) {
+    final dimsPtr = calloc.allocate<Int64>(rank);
+    final maxdimsPtr = calloc.allocate<Int64>(rank);
+    final status = __getSimpleExtentDims(space_id, dimsPtr, maxdimsPtr);
+
+    if (status < 0) {
+      calloc.free(dimsPtr);
+      calloc.free(maxdimsPtr);
+      throw Exception('Failed to get dataspace dimensions');
+    }
+    List<int> dims = List.from(dimsPtr.asTypedList(rank));
+    List<int> maxdims = List.from(maxdimsPtr.asTypedList(rank));
+    calloc.free(dimsPtr);
+    calloc.free(maxdimsPtr);
+    return (dims, maxdims);
+  }
+
+  int createSimple(List<int> dims) {
+    Pointer<Int64> dimMS = intListToCArray(dims);
+    final space_id = __createSimple(dims.length, dimMS, nullptr);
+    calloc.free(dimMS);
+    if (space_id < 0) {
+      throw Exception('Failed to create dataspace');
+    }
+    return space_id;
+  }
+
+  void selectHyperslab(int space_id, List<int> start, List<int> count) {
+    Pointer<Int64> startPtr = intListToCArray(start);
+    Pointer<Int64> countPtr = intListToCArray(count);
+
+    final status = __selectHyperslab(
+        space_id, H5S_SELECT_SET, startPtr, nullptr, countPtr, nullptr);
+
+    calloc.free(startPtr);
+    calloc.free(countPtr);
+
+    if (status < 0) {
+      throw Exception('Failed to select hyperslab');
+    }
+  }
 }

@@ -7,22 +7,17 @@ import 'package:hdf5/src/c_to_dart_calls/utility.dart';
 import 'dart:ffi';
 import 'package:ffi/ffi.dart';
 
-class H5File implements Finalizable {
+class H5File {
   final String fileName;
-  late final int fileId;
+  late final int __fileId;
+  
+  bool __closed = false;
+  List children = [];
 
-  static final _finalizer = NativeFinalizer(HDF5Bindings().H5F.closePtr);
+  get fileId => (__closed) ? -1 : __fileId;
 
-  H5File.open(this.fileName) {
-    Pointer<Uint8> namePtr = strToChar(fileName);
-    fileId = HDF5Bindings().H5F.open(namePtr, H5F_ACC_SWMR_READ, H5P_DEFAULT);
-    if (fileId < 0){
-      throw Exception("Failed to open file $fileName");
-    }
-    calloc.free(namePtr);
-
-    // _finalizer.attach(this, Pointer.fromAddress(fileId));
-  }
+  H5File.open(this.fileName): 
+    __fileId = HDF5Bindings().H5F.open(fileName, H5F_ACC_SWMR_READ, H5P_DEFAULT);
 
   H5File.openROS3(String url, String aws_region, String secret_id, String secret_key, 
                   {String token = ""}) : fileName = url {
@@ -45,13 +40,19 @@ class H5File implements Finalizable {
       calloc.free(tokenPtr);
     }
 
-    Pointer<Uint8> urlPtr = strToChar(url);
-    fileId = HDF5Bindings().H5F.open(urlPtr, H5F_ACC_RDONLY, fapl_id);
-    calloc.free(urlPtr);
+    __fileId = HDF5Bindings().H5F.open(url, H5F_ACC_RDONLY, fapl_id);
     calloc.free(fa);
     b.H5P.close(fapl_id);
+  }
 
-    // _finalizer.attach(this, Pointer.fromAddress(fileId));
+  void close(){
+    if (__closed) return;
+    
+    for (var child in children){
+      child.close();
+    }
+    __closed = true;
+    HDF5Bindings().H5F.close(__fileId);
   }
 
   H5Group get group {

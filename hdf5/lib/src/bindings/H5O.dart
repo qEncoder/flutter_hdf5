@@ -1,5 +1,8 @@
 import 'dart:ffi';
 
+import 'package:hdf5/src/bindings/HDF5_bindings.dart';
+import 'package:hdf5/src/c_to_dart_calls/utility.dart';
+
 // enum H5O_type_t
 const int H5O_TYPE_UNKNOWN = -1; //**< Unknown object type        */
 const int H5O_TYPE_GROUP = 0; //**< Object is a group          */
@@ -76,10 +79,20 @@ typedef H5Oget_info_by_idx = int Function(
     int lapl_id);
 
 class H5OBindings {
-  final H5Oget_info_by_idx getInfoByIdx;
+  final H5Oget_info_by_idx __getInfoByIdx;
+  final Pointer<Uint8> grp_name = strToChar('.');
 
   H5OBindings(DynamicLibrary HDF5Lib)
-      : getInfoByIdx = HDF5Lib.lookup<NativeFunction<H5Oget_info_by_idx_c>>(
+      : __getInfoByIdx = HDF5Lib.lookup<NativeFunction<H5Oget_info_by_idx_c>>(
                 'H5Oget_info_by_idx3')
             .asFunction();
+
+  void getInfoByIdx(int loc_id, int index, Pointer<H5O_info_t> oinfo) {
+    final status = __getInfoByIdx(loc_id, grp_name, H5_INDEX_NAME, H5_ITER_INC,
+                                    index, oinfo, H5O_INFO_BASIC, H5P_DEFAULT);
+    if (status < 0) {
+      throw Exception('Failed to get link info by index');
+    }
+  }
+
 }

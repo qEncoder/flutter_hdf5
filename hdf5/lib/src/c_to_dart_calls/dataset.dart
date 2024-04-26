@@ -118,19 +118,10 @@ ndarray readData(datasetId, dynamic idx) {
       outputDim.add(spaceInfo.dim[i]);
     }
   }
-  Pointer<Int64> dimMS = intListToCArray(outputDim);
-  int memSpaceId =  HDF5lib.H5S.createSimple(outputDim.length, dimMS, nullptr);
-  
-  Pointer<Int64> dimDS = intListToCArray(spaceInfo.dim);
-  int fileSpaceId = HDF5lib.H5S.createSimple(spaceInfo.rank, dimDS, nullptr);
+  int memSpaceId =  HDF5lib.H5S.createSimple(outputDim);
+  int fileSpaceId = HDF5lib.H5S.createSimple(spaceInfo.dim);
 
-  Pointer<Int64> offsetDS = intListToCArray(offset);
-  Pointer<Int64> countDS = intListToCArray(count);
-  HDF5lib.H5S.selectHyperslab(fileSpaceId, H5S_SELECT_SET, offsetDS, nullptr, countDS, nullptr);
-  
-  calloc.free(dimMS);
-  calloc.free(offsetDS);
-  calloc.free(countDS);
+  HDF5lib.H5S.selectHyperslab(fileSpaceId, offset, count);
 
   return (
     memSpaceId: memSpaceId,

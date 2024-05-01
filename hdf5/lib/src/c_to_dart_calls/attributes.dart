@@ -14,26 +14,7 @@ getAttrNames(int loc_id) {
   HDF5Bindings HDF5lib = HDF5Bindings();
 
   int nAttr = HDF5lib.H5A.getNumAttrs(loc_id);
-
-  List<String> attrNames = [];
-  Pointer<Uint8> obj_name = strToChar(".");
-
-  for (var i = 0; i < nAttr; i++) {
-    int attrSize = HDF5lib.H5A.getNameByIdx(loc_id, obj_name, H5_INDEX_NAME,
-        H5_ITER_INC, i, nullptr, 0, H5P_DEFAULT);
-    if (attrSize < 0) throw "Error in attr size (negative)";
-
-    Pointer<Uint8> name = calloc<Uint8>(attrSize + 1);
-    int error = HDF5lib.H5A.getNameByIdx(loc_id, obj_name, H5_INDEX_NAME,
-        H5_ITER_INC, i, name, attrSize + 1, H5P_DEFAULT);
-    if (error < 0) throw "Error in obtaining attribute name";
-
-    attrNames.add(charToString(name));
-    calloc.free(name);
-  }
-  calloc.free(obj_name);
-
-  return attrNames;
+  return List.generate(nAttr, (i) => HDF5lib.H5A.getNameByIdx(loc_id, i));
 }
 
 class CompoundMemberInfo {
@@ -212,30 +193,13 @@ dynamic cAttrDataToDart(
       }
       break;
     case H5T_REFERENCE:
-      Pointer<Int64> refenceList = myData.cast<Int64>();
+      Pointer<Int64> referenceList = myData.cast<Int64>();
       switch (spaceInfo.rank) {
         case 0:
-          // how to be sure of the H5R_type_t? (should be H5R_OBJECT in most cases)
-          // note that there is also an error in the docs, oapl_id not mentioned (observable in the source code).
-          int objId = HDF5lib.H5R
-              .deReference(file.fileId, H5P_DEFAULT, H5R_OBJECT, refenceList);
+          int objId = HDF5lib.H5R.deReference(file.fileId, referenceList);
+          String name = HDF5lib.H5R.getName(objId, referenceList);
 
-          int nameSize =
-              HDF5lib.H5R.getName(objId, H5R_OBJECT, refenceList, nullptr, 0);
-          if (nameSize < 0) throw "Error in getting name of the reference.";
-
-          Pointer<Uint8> nameC = calloc<Uint8>(nameSize + 1);
-          int error = HDF5lib.H5R
-              .getName(objId, H5R_OBJECT, refenceList, nameC, nameSize + 1);
-          if (error < 0) throw "Error in obtaining attribute name";
-
-          String name = charToString(nameC);
-          calloc.free(nameC);
-
-          Pointer<Int32> objTypeC = calloc<Int32>(1);
-          HDF5lib.H5R.getObjType(objId, H5R_OBJECT, refenceList, objTypeC);
-          int objType = objTypeC.value;
-          calloc.free(objTypeC);
+          int objType = HDF5lib.H5R.getObjType(objId, referenceList);
 
           switch (objType) {
             case H5O_TYPE_GROUP:
@@ -255,7 +219,7 @@ dynamic cAttrDataToDart(
         case 1:
           output = [];
           for (int i = 0; i < spaceInfo.dim[0]; i++) {
-            Pointer dataPtr = refenceList.elementAt(i);
+            Pointer dataPtr = referenceList.elementAt(i);
             output.add(
                 cAttrDataToDart(file, dataPtr, typeInfo, SpaceInfo(0, [], [])));
           }
@@ -268,17 +232,17 @@ dynamic cAttrDataToDart(
       Map enumDict = {};
 
       int nMembers = HDF5lib.H5T.getNMembers(typeInfo.nativeTypeId);
-      TypeInfo enumTypeInfo = getTypeInfo(HDF5lib.H5T.getSuper(typeInfo.nativeTypeId));
+      TypeInfo enumTypeInfo =
+          getTypeInfo(HDF5lib.H5T.getSuper(typeInfo.nativeTypeId));
       SpaceInfo enumSpaceInfo = SpaceInfo(0, [], []);
-      
+
       for (int i = 0; i < nMembers; i++) {
-        Pointer<Uint8> memberNamePtr = HDF5lib.H5T.getMemberName(typeInfo.nativeTypeId, i);
-        String enumValue = charToString(memberNamePtr);
-        HDF5lib.H5.freeMemory(memberNamePtr);
-        
+        String enumValue = HDF5lib.H5T.getMemberName(typeInfo.nativeTypeId, i);
+
         Pointer enumKeyPtr = calloc<Uint8>(enumTypeInfo.size);
         HDF5lib.H5T.getMemberValue(typeInfo.nativeTypeId, i, enumKeyPtr);
-        var enumKey = cAttrDataToDart(file, enumKeyPtr, enumTypeInfo, enumSpaceInfo);
+        var enumKey =
+            cAttrDataToDart(file, enumKeyPtr, enumTypeInfo, enumSpaceInfo);
         calloc.free(enumKeyPtr);
 
         enumDict[enumKey] = enumValue;
@@ -288,11 +252,11 @@ dynamic cAttrDataToDart(
 
       var value = cAttrDataToDart(file, myData, enumTypeInfo, enumSpaceInfo);
       return enumDict[value];
-    
+
     case H5T_ARRAY:
       throw "Array attributes currently not supported.";
 
-    case H5T_VLEN :
+    case H5T_VLEN:
       output = [];
       Pointer<hvl_t> dataPtr = Pointer.fromAddress(myData.address);
       TypeInfo VLEN_TYPE =
@@ -314,10 +278,7 @@ dynamic cAttrDataToDart(
       List<CompoundMemberInfo> compoundMemberInfo = [];
 
       for (int i = 0; i < nMembers; i++) {
-        Pointer<Uint8> memberNamePtr =
-            HDF5lib.H5T.getMemberName(typeInfo.nativeTypeId, i);
-        String memberName = charToString(memberNamePtr);
-        HDF5lib.H5.freeMemory(memberNamePtr);
+        String memberName = HDF5lib.H5T.getMemberName(typeInfo.nativeTypeId, i);
 
         int memberType = HDF5lib.H5T.getMemberType(typeInfo.nativeTypeId, i);
         TypeInfo memberTypeInfo = getTypeInfo(memberType);
@@ -333,7 +294,7 @@ dynamic cAttrDataToDart(
           Map<String, dynamic> compoundData = {};
           for (int n = 0; n < nMembers; n++) {
             Pointer dataPtr =
-                myData.cast<Uint8>().elementAt(compoundMemberInfo[n].offset);
+                myData.cast<Uint8>() + compoundMemberInfo[n].offset;
             compoundData[compoundMemberInfo[n].name] = cAttrDataToDart(
                 file,
                 dataPtr,

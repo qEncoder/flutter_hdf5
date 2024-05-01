@@ -7,34 +7,35 @@ import 'package:hdf5/src/c_to_dart_calls/utility.dart';
 import 'dart:ffi';
 import 'package:ffi/ffi.dart';
 
-class H5Group implements Finalizable {
+class H5Group {
   final H5File file;
   final String name;
-  late final int groupId;
+  late final int __groupId;
+
+  bool __closed = false;
 
   late final AttributeMgr attr;
   late final List<String> groups;
   late final List<String> datasets;
 
-  static final _finalizer = NativeFinalizer(HDF5Bindings().H5G.closePtr);
+  get groupId => (__closed) ? -1 : __groupId;
 
   H5Group(this.file, this.name) {
     Pointer<Uint8> namePtr = strToChar(name);
-    groupId = HDF5Bindings().H5G.open(file.fileId, namePtr, H5P_DEFAULT);
+    __groupId = HDF5Bindings().H5G.open(file.fileId, namePtr, H5P_DEFAULT);
 
     calloc.free(namePtr);
     attr = AttributeMgr(file, groupId);
     groups = getGroupItems(groupId, H5O_TYPE_GROUP);
     datasets = getGroupItems(groupId, H5O_TYPE_DATASET);
-
-    _finalizer.attach(this, Pointer.fromAddress(groupId));
+    file.children.add(this);
   }
 
-  H5Group.rawInit(this.file, this.name, this.groupId)
-      : attr = AttributeMgr(file, groupId),
-        groups = getGroupItems(groupId, H5O_TYPE_GROUP),
-        datasets = getGroupItems(groupId, H5O_TYPE_DATASET) {
-    _finalizer.attach(this, Pointer.fromAddress(groupId));
+  void close() {
+    if (__closed) return;
+
+    __closed = true;
+    HDF5Bindings().H5G.close(__groupId);
   }
 
   dynamic operator [](String key) {

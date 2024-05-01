@@ -1,4 +1,8 @@
 import 'dart:ffi';
+import 'package:ffi/ffi.dart';
+
+import 'package:hdf5/src/bindings/H5.dart';
+import 'package:hdf5/src/c_to_dart_calls/utility.dart';
 
 const int H5R_BADTYPE = -1;
 const int H5R_OBJECT = 0;
@@ -27,17 +31,58 @@ typedef H5Rget_obj_type = int Function(
     int id, int ref_type, Pointer ref, Pointer<Int32> obj_type);
 
 class H5RBindings {
-  final H5Rdereference deReference;
-  final H5Rget_name getName;
-  final H5Rget_obj_type getObjType;
+  final H5Rdereference __deReference;
+  final H5Rget_name __getName;
+  final H5Rget_obj_type __getObjType;
 
   H5RBindings(DynamicLibrary HDF5Lib)
-      : deReference =
+      : __deReference =
             HDF5Lib.lookup<NativeFunction<H5Rdereference_c>>('H5Rdereference2')
                 .asFunction(),
-        getName = HDF5Lib.lookup<NativeFunction<H5Rget_name_c>>('H5Rget_name')
+        __getName = HDF5Lib.lookup<NativeFunction<H5Rget_name_c>>('H5Rget_name')
             .asFunction(),
-        getObjType = HDF5Lib.lookup<NativeFunction<H5Rget_obj_type_c>>(
+        __getObjType = HDF5Lib.lookup<NativeFunction<H5Rget_obj_type_c>>(
                 'H5Rget_obj_type2')
             .asFunction();
+
+  int deReference(int obj_id, Pointer ref) {
+    // how to be sure of the H5R_type_t? (should be H5R_OBJECT in most cases)
+    // note that there is also an error in the docs, oapl_id not mentioned (observable in the source code).
+    final object_id = __deReference(obj_id, H5P_DEFAULT, H5R_OBJECT, ref);
+    if (object_id < 0) {
+      throw Exception('Failed to dereference');
+    }
+    return object_id;
+  }
+
+  String getName(int obj_id, Pointer ref) {
+    final nameSize = __getName(obj_id, H5R_OBJECT, ref, nullptr, 0);
+    if (nameSize < 0) {
+      throw Exception('Failed to get name');
+    }
+
+    Pointer<Uint8> name = calloc<Uint8>(nameSize + 1);
+    final status = __getName(obj_id, H5R_OBJECT, ref, name, nameSize + 1);
+    if (status < 0) {
+      calloc.free(name);
+      throw Exception('Failed to get name');
+    }
+
+    final result = charToString(name);
+    calloc.free(name);
+    return result;
+  }
+
+  int getObjType(int obj_id, Pointer ref) {
+    final Pointer<Int32> objType = calloc<Int32>(1);
+    final status = __getObjType(obj_id, H5R_OBJECT, ref, objType);
+    if (status < 0) {
+      calloc.free(objType);
+      throw Exception('Failed to get object type');
+    }
+
+    final result = objType.value;
+    calloc.free(objType);
+    return result;
+  }
 }

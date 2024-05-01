@@ -1,4 +1,5 @@
 import 'dart:ffi';
+import 'package:ffi/ffi.dart';
 
 typedef H5Gopen_c = Int64 Function(
     Int64 group_id, Pointer<Uint8> name, Int64 gapl_id);
@@ -14,18 +15,45 @@ typedef H5Gget_num_objs_c = Int64 Function(
 typedef H5Gget_num_objs = int Function(int group_id, Pointer<Int64> num_objs);
 
 class H5GBindings {
-  final H5Gopen open;
-  final H5Gclose close;
-  final H5Gget_num_objs getNumObjs;
-  final Pointer<NativeFunction<Void Function(Pointer<Void>)>> closePtr;
+  final H5Gopen __open;
+  final H5Gclose __close;
+  final H5Gget_num_objs __getNumObjs;
 
   H5GBindings(DynamicLibrary HDF5Lib)
-      : open =
+      : __open =
             HDF5Lib.lookup<NativeFunction<H5Gopen_c>>('H5Gopen2').asFunction(),
-        close =
+        __close =
             HDF5Lib.lookup<NativeFunction<H5Gclose_c>>('H5Gclose').asFunction(),
-        closePtr = HDF5Lib.lookup<NativeFunction<H5GcloseNative>>('H5Gclose'),
-        getNumObjs =
+        __getNumObjs =
             HDF5Lib.lookup<NativeFunction<H5Gget_num_objs_c>>('H5Gget_num_objs')
                 .asFunction();
+
+  int open(int group_id, Pointer<Uint8> name, int gapl_id) {
+    final id = __open(group_id, name, gapl_id);
+    if (id < 0) {
+      throw Exception('Failed to open group');
+    }
+    return id;
+  }
+
+  void close(int group_id) {
+    final status = __close(group_id);
+
+    if (status < 0) {
+      print(
+          "********* Failing closing group $group_id with status $status -- report to Stephan");
+      throw Exception('Failed to close group');
+    }
+  }
+
+  int getNumObjs(int group_id) {
+    final Pointer<Int64> num_objs = calloc<Int64>(1);
+    final status = __getNumObjs(group_id, num_objs);
+    if (status < 0) {
+      throw Exception('Failed to get number of objects in group');
+    }
+    final result = num_objs.value;
+    calloc.free(num_objs);
+    return result;
+  }
 }

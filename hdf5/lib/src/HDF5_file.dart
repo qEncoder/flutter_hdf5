@@ -7,25 +7,23 @@ import 'package:hdf5/src/c_to_dart_calls/utility.dart';
 import 'dart:ffi';
 import 'package:ffi/ffi.dart';
 
-class H5File implements Finalizable {
+class H5File {
   final String fileName;
-  late final int fileId;
+  late final int __fileId;
 
-  static final _finalizer = NativeFinalizer(HDF5Bindings().H5F.closePtr);
+  bool __closed = false;
+  List children = [];
 
-  H5File.open(this.fileName) {
-    Pointer<Uint8> namePtr = strToChar(fileName);
-    fileId = HDF5Bindings().H5F.open(namePtr, H5F_ACC_SWMR_READ, H5P_DEFAULT);
-    if (fileId < 0){
-      throw Exception("Failed to open file $fileName");
-    }
-    calloc.free(namePtr);
+  get fileId => (__closed) ? -1 : __fileId;
 
-    _finalizer.attach(this, Pointer.fromAddress(fileId));
-  }
+  H5File.open(this.fileName)
+      : __fileId =
+            HDF5Bindings().H5F.open(fileName, H5F_ACC_SWMR_READ, H5P_DEFAULT);
 
-  H5File.openROS3(String url, String aws_region, String secret_id, String secret_key, 
-                  {String token = ""}) : fileName = url {
+  H5File.openROS3(
+      String url, String aws_region, String secret_id, String secret_key,
+      {String token = ""})
+      : fileName = url {
     HDF5Bindings b = HDF5Bindings();
 
     int fapl_id = b.H5P.create(b.H5P.FILE_ACCESS);
@@ -33,25 +31,31 @@ class H5File implements Finalizable {
     Pointer<H5FD_ros3_fapl_t> fa = calloc<H5FD_ros3_fapl_t>(1);
     fa[0].version = 1;
     fa[0].authenticate = true;
-    strToArray(aws_region, fa[0].aws_region, 32+1);
-    strToArray(secret_id, fa[0].secret_id, 128+1);
-    strToArray(secret_key, fa[0].secret_key, 128+1);
+    strToArray(aws_region, fa[0].aws_region, 32 + 1);
+    strToArray(secret_id, fa[0].secret_id, 128 + 1);
+    strToArray(secret_key, fa[0].secret_key, 128 + 1);
 
     b.H5P.setFaplRos3(fapl_id, fa);
 
-    if (token.isNotEmpty){
+    if (token.isNotEmpty) {
       Pointer<Uint8> tokenPtr = strToChar(token);
       b.H5P.setFaplRos3Token(fapl_id, tokenPtr);
       calloc.free(tokenPtr);
     }
 
-    Pointer<Uint8> urlPtr = strToChar(url);
-    fileId = HDF5Bindings().H5F.open(urlPtr, H5F_ACC_RDONLY, fapl_id);
-    calloc.free(urlPtr);
+    __fileId = HDF5Bindings().H5F.open(url, H5F_ACC_RDONLY, fapl_id);
     calloc.free(fa);
     b.H5P.close(fapl_id);
+  }
 
-    _finalizer.attach(this, Pointer.fromAddress(fileId));
+  void close() {
+    if (__closed) return;
+
+    for (var child in children.reversed) {
+      child.close();
+    }
+    __closed = true;
+    HDF5Bindings().H5F.close(__fileId);
   }
 
   H5Group get group {

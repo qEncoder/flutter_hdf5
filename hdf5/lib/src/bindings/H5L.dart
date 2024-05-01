@@ -1,4 +1,8 @@
 import 'dart:ffi';
+import 'package:ffi/ffi.dart';
+
+import 'package:hdf5/src/bindings/H5.dart';
+import 'package:hdf5/src/c_to_dart_calls/utility.dart';
 
 // H5L_type_t
 const int H5L_TYPE_ERROR = -1; //**< Invalid link type id         */
@@ -71,14 +75,45 @@ typedef H5Lget_name_by_idx = int Function(
     int lapl_id);
 
 class H5LBindings {
-  final H5Lget_info_by_idx getInfoByIdx;
-  final H5Lget_name_by_idx getNameByIdx;
+  final H5Lget_info_by_idx __getInfoByIdx;
+  final H5Lget_name_by_idx __getNameByIdx;
+
+  final Pointer<Uint8> grp_name = strToChar('.');
 
   H5LBindings(DynamicLibrary HDF5Lib)
-      : getInfoByIdx = HDF5Lib.lookup<NativeFunction<H5Lget_info_by_idx_c>>(
+      : __getInfoByIdx = HDF5Lib.lookup<NativeFunction<H5Lget_info_by_idx_c>>(
                 'H5Lget_info_by_idx2')
             .asFunction(),
-        getNameByIdx = HDF5Lib.lookup<NativeFunction<H5Lget_name_by_idx_c>>(
+        __getNameByIdx = HDF5Lib.lookup<NativeFunction<H5Lget_name_by_idx_c>>(
                 'H5Lget_name_by_idx')
             .asFunction();
+
+  void getInfoByIdx(int loc_id, int index, Pointer<H5L_info_t> linfo) {
+    final status = __getInfoByIdx(loc_id, grp_name, H5_INDEX_NAME, H5_ITER_INC,
+        index, linfo, H5P_DEFAULT);
+    if (status < 0) {
+      throw Exception('Failed to get link info by index');
+    }
+  }
+
+  String getNameByIdx(int loc_id, int idx) {
+    final nameSize = __getNameByIdx(loc_id, grp_name, H5_INDEX_NAME,
+        H5_ITER_INC, idx, nullptr, 0, H5P_DEFAULT);
+    if (nameSize < 0) {
+      throw Exception('Failed to get link name by index');
+    }
+
+    Pointer<Uint8> name = calloc<Uint8>(nameSize + 1);
+    Pointer<Pointer<Uint8>> namePtr = Pointer.fromAddress(name.address);
+
+    final status = __getNameByIdx(loc_id, grp_name, H5_INDEX_NAME, H5_ITER_INC,
+        idx, namePtr, nameSize + 1, H5P_DEFAULT);
+    if (status < 0) {
+      throw Exception('Failed to get link name by index');
+    }
+
+    String linkName = charToString(name);
+    calloc.free(name);
+    return linkName;
+  }
 }

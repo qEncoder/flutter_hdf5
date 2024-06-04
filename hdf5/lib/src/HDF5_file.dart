@@ -6,6 +6,7 @@ import 'package:hdf5/src/c_to_dart_calls/utility.dart';
 
 import 'dart:ffi';
 import 'package:ffi/ffi.dart';
+import 'package:hdf5/src/utility/logging.dart';
 
 class H5File {
   final String fileName;
@@ -24,6 +25,7 @@ class H5File {
       String url, String aws_region, String secret_id, String secret_key,
       {String token = ""})
       : fileName = url {
+    logger.info("Opening file using ROS3: $url");
     HDF5Bindings b = HDF5Bindings();
 
     int fapl_id = b.H5P.create(b.H5P.FILE_ACCESS);

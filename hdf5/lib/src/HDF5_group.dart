@@ -6,6 +6,7 @@ import 'package:hdf5/src/c_to_dart_calls/utility.dart';
 
 import 'dart:ffi';
 import 'package:ffi/ffi.dart';
+import 'package:hdf5/src/utility/logging.dart';
 
 class H5Group {
   final H5File file;
@@ -21,6 +22,7 @@ class H5Group {
   get groupId => (__closed) ? -1 : __groupId;
 
   H5Group(this.file, this.name) {
+    logger.info("Opening group $name in file ${file.fileName}");
     Pointer<Uint8> namePtr = strToChar(name);
     __groupId = HDF5Bindings().H5G.open(file.fileId, namePtr, H5P_DEFAULT);
 

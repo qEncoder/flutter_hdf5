@@ -1,6 +1,7 @@
 import 'package:hdf5/src/bindings/HDF5_bindings.dart';
 import 'package:hdf5/src/c_to_dart_calls/type_info.dart';
 import 'package:hdf5/src/c_to_dart_calls/space_info.dart';
+import 'package:hdf5/src/utility/logging.dart';
 
 import 'package:numd/numd.dart';
 
@@ -8,6 +9,7 @@ import 'dart:ffi';
 import 'package:ffi/ffi.dart';
 
 ndarray readData(datasetId, dynamic idx) {
+  logger.info("Reading data from dataset $datasetId");
   HDF5Bindings HDF5lib = HDF5Bindings();
 
   int typeId = HDF5lib.H5D.getType(datasetId);
@@ -78,6 +80,7 @@ ndarray readData(datasetId, dynamic idx) {
   typeInfo.dispose();
 
   calloc.free(data);
+  logger.info("Data read from dataset $datasetId successfully");
   return dataOut;
 }
 

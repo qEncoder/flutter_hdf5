@@ -2,6 +2,7 @@ import 'dart:ffi';
 import 'package:ffi/ffi.dart';
 
 import 'package:hdf5/src/c_to_dart_calls/utility.dart';
+import 'package:hdf5/src/utility/logging.dart';
 
 const int H5F_ACC_RDONLY = 0; // Allows read-only access to file
 const int H5F_ACC_RDWR = 1; //  Allows read and write access to file
@@ -33,8 +34,10 @@ class H5FBindings {
     Pointer<Uint8> namePtr = strToChar(fileName);
     final id = __open(namePtr, flags, fapl_id);
     calloc.free(namePtr);
+    logger.info('Opened file $fileName with id $id');
 
     if (id < 0) {
+      logger.severe('Failed to open file $fileName');
       throw Exception('Failed to open file');
     }
     return id;
@@ -42,7 +45,9 @@ class H5FBindings {
 
   void close(int file_id) {
     final status = __close(file_id);
+    logger.info('Closed file with id $file_id');
     if (status < 0) {
+      logger.severe('Failed to close file with id $file_id');
       print(
           '**************Failed to close file with id $file_id -- report to Stephan');
       throw Exception('Failed to close file');

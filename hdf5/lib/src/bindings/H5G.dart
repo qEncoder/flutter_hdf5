@@ -1,5 +1,6 @@
 import 'dart:ffi';
 import 'package:ffi/ffi.dart';
+import 'package:hdf5/src/utility/logging.dart';
 
 typedef H5Gopen_c = Int64 Function(
     Int64 group_id, Pointer<Uint8> name, Int64 gapl_id);
@@ -30,7 +31,9 @@ class H5GBindings {
 
   int open(int group_id, Pointer<Uint8> name, int gapl_id) {
     final id = __open(group_id, name, gapl_id);
+    logger.info('Opened group with id $id');
     if (id < 0) {
+      logger.severe('Failed to open group with id $group_id');
       throw Exception('Failed to open group');
     }
     return id;
@@ -38,10 +41,9 @@ class H5GBindings {
 
   void close(int group_id) {
     final status = __close(group_id);
-
+    logger.info('Closed group with id $group_id');
     if (status < 0) {
-      print(
-          "********* Failing closing group $group_id with status $status -- report to Stephan");
+      logger.severe('Failed to close group with id $group_id');
       throw Exception('Failed to close group');
     }
   }
@@ -50,6 +52,7 @@ class H5GBindings {
     final Pointer<Int64> num_objs = calloc<Int64>(1);
     final status = __getNumObjs(group_id, num_objs);
     if (status < 0) {
+      logger.severe('Failed to get number of objects in group with id $group_id');
       throw Exception('Failed to get number of objects in group');
     }
     final result = num_objs.value;

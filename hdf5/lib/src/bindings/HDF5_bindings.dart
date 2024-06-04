@@ -63,6 +63,8 @@ export 'H5S.dart'
 export 'H5R.dart'
     show H5R_BADTYPE, H5R_OBJECT, H5R_DATASET_REGION, H5R_MAXTYPE, H5R_type_t;
 
+import 'package:hdf5/src/utility/logging.dart';
+
 import 'H5.dart';
 import 'H5A.dart';
 import 'H5D.dart';
@@ -102,8 +104,9 @@ class HDF5Bindings {
     } else if (Platform.isWindows) {
       libraryPath = 'hdf5.dll';
     }
-
+    logger.info("Loading HDF5 library from $libraryPath");
     final DynamicLibrary HDF5Lib = DynamicLibrary.open(libraryPath);
+    logger.info('HDF5 library loaded');
 
     H5 = H5Bindings(HDF5Lib);
     H5A = H5ABindings(HDF5Lib);

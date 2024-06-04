@@ -1,5 +1,7 @@
 import 'dart:ffi';
 
+import 'package:hdf5/src/utility/logging.dart';
+
 const int H5D_LAYOUT_ERROR = -1;
 const int H5D_COMPACT = 0;
 const int H5D_CONTIGUOUS = 1;
@@ -82,7 +84,9 @@ class H5DBindings {
 
   int open(int loc_id, Pointer<Uint8> name, int lapl_id) {
     final id = __open(loc_id, name, lapl_id);
+    logger.info('Opened dataset with the id $id');
     if (id < 0) {
+      logger.severe('Failed to open dataset with name $name at the id $id');
       throw Exception("Failed to open dataset");
     }
     return id;
@@ -90,9 +94,9 @@ class H5DBindings {
 
   int close(int dset_id) {
     final status = __close(dset_id);
+    logger.info('Closed dataset with id $dset_id');
     if (status < 0) {
-      print(
-          '*********  Failing closing dataset with status $status and id $dset_id -- report to Stephan');
+      logger.severe('Failed to close dataset with status $status and id $dset_id');
       throw Exception("Failed to close dataset");
     }
     return status;
@@ -101,6 +105,7 @@ class H5DBindings {
   int getSpace(int dset_id) {
     final space = __getSpace(dset_id);
     if (space < 0) {
+      logger.severe('Failed to get dataspace for dataset with id $dset_id');
       throw Exception("Failed to get dataspace");
     }
     return space;
@@ -109,6 +114,7 @@ class H5DBindings {
   int getType(int dset_id) {
     final type = __getType(dset_id);
     if (type < 0) {
+      logger.severe('Failed to get datatype for dataset with id $dset_id');
       throw Exception("Failed to get datatype");
     }
     return type;
@@ -117,6 +123,7 @@ class H5DBindings {
   int getCreatePlist(int dset_id) {
     final plist = __getCreatePlist(dset_id);
     if (plist < 0) {
+      logger.severe('Failed to get create property list for dataset with id $dset_id');
       throw Exception("Failed to get create property list");
     }
     return plist;
@@ -125,6 +132,7 @@ class H5DBindings {
   int getAccessPlist(int dset_id) {
     final plist = __getAccessPlist(dset_id);
     if (plist < 0) {
+      logger.severe('Failed to get access property list for dataset with id $dset_id');
       throw Exception("Failed to get access property list");
     }
     return plist;
@@ -135,6 +143,7 @@ class H5DBindings {
     final status =
         __read(dset_id, mem_type_id, mem_space_id, file_space_id, dxpl_id, buf);
     if (status < 0) {
+      logger.severe('Failed to read dataset with id $dset_id');
       throw Exception("Failed to read dataset");
     }
     return status;
@@ -143,6 +152,7 @@ class H5DBindings {
   int refresh(int dset_id) {
     final status = __refresh(dset_id);
     if (status < 0) {
+      logger.severe('Failed to refresh dataset with id $dset_id');
       throw Exception("Failed to refresh dataset");
     }
     return status;

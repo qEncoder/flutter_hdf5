@@ -7,6 +7,7 @@ import 'package:hdf5/src/HDF5_file.dart';
 
 import 'dart:ffi';
 import 'package:ffi/ffi.dart';
+import 'package:hdf5/src/utility/logging.dart';
 
 class H5Dataset {
   final H5File file;
@@ -24,6 +25,7 @@ class H5Dataset {
   late final AttributeMgr attr;
 
   H5Dataset(this.file, this.fullName) : name = fullName.split("/").last {
+    logger.info("Opening dataset $fullName in file ${file.fileName}");
     Pointer<Uint8> namePtr = strToChar(fullName);
 
     __datasetId = HDF5Bindings().H5D.open(file.fileId, namePtr, H5P_DEFAULT);

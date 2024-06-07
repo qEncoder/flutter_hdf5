@@ -1,5 +1,6 @@
 import 'dart:ffi';
 import 'package:ffi/ffi.dart';
+import 'package:hdf5/src/utility/logging.dart';
 import 'package:numd/numd.dart';
 
 const int H5S_ALL = 0; // /* (hid_t) */
@@ -76,6 +77,7 @@ class H5SBindings {
   void close(int space_id) {
     final status = __close(space_id);
     if (status < 0) {
+      logger.severe('Failed to close dataspace');
       throw Exception('Failed to close space');
     }
   }
@@ -83,6 +85,7 @@ class H5SBindings {
   int getSimpleExtentNdims(int space_id) {
     final rank = __getSimpleExtentNdims(space_id);
     if (rank < 0) {
+      logger.severe('Failed to get rank of dataspace');
       throw Exception('Failed to get rank of dataspace');
     }
     return rank;
@@ -96,6 +99,7 @@ class H5SBindings {
     if (status < 0) {
       calloc.free(dimPtr);
       calloc.free(maxdimPtr);
+      logger.severe('Failed to get dataspace dimensions');
       throw Exception('Failed to get dataspace dimensions');
     }
 
@@ -112,6 +116,7 @@ class H5SBindings {
     final space_id = __createSimple(dims.length, dimMS, nullptr);
     calloc.free(dimMS);
     if (space_id < 0) {
+      logger.severe('Failed to create dataspace');
       throw Exception('Failed to create dataspace');
     }
     return space_id;
@@ -128,6 +133,7 @@ class H5SBindings {
     calloc.free(countPtr);
 
     if (status < 0) {
+      logger.severe('Failed to select hyperslab');
       throw Exception('Failed to select hyperslab');
     }
   }

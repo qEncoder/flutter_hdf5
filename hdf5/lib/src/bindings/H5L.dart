@@ -3,6 +3,7 @@ import 'package:ffi/ffi.dart';
 
 import 'package:hdf5/src/bindings/H5.dart';
 import 'package:hdf5/src/c_to_dart_calls/utility.dart';
+import 'package:hdf5/src/utility/logging.dart';
 
 // H5L_type_t
 const int H5L_TYPE_ERROR = -1; //**< Invalid link type id         */
@@ -92,6 +93,7 @@ class H5LBindings {
     final status = __getInfoByIdx(loc_id, grp_name, H5_INDEX_NAME, H5_ITER_INC,
         index, linfo, H5P_DEFAULT);
     if (status < 0) {
+      logger.severe('Failed to get link info by index for location $loc_id');
       throw Exception('Failed to get link info by index');
     }
   }
@@ -100,6 +102,7 @@ class H5LBindings {
     final nameSize = __getNameByIdx(loc_id, grp_name, H5_INDEX_NAME,
         H5_ITER_INC, idx, nullptr, 0, H5P_DEFAULT);
     if (nameSize < 0) {
+      logger.severe('Failed to get link name by index for location $loc_id');
       throw Exception('Failed to get link name by index');
     }
 
@@ -109,6 +112,7 @@ class H5LBindings {
     final status = __getNameByIdx(loc_id, grp_name, H5_INDEX_NAME, H5_ITER_INC,
         idx, namePtr, nameSize + 1, H5P_DEFAULT);
     if (status < 0) {
+      logger.severe('Failed to get link name by index for location $loc_id');
       throw Exception('Failed to get link name by index');
     }
 

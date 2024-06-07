@@ -1,4 +1,8 @@
 import 'dart:ffi';
+import 'package:hdf5/src/bindings/H5.dart';
+
+import 'package:hdf5/src/c_to_dart_calls/utility.dart';
+import 'package:hdf5/src/utility/logging.dart';
 
 // typedef enum H5T_class_t
 const int H5T_NO_CLASS = -1;
@@ -80,7 +84,8 @@ typedef H5Tget_member_name = Pointer<Uint8> Function(int type_id, int membno);
 
 typedef H5Tget_member_value_c = Int64 Function(
     Int64 type_id, Uint64 membno, Pointer value);
-typedef H5Tget_member_value = int Function(int type_id, int membno, Pointer value);
+typedef H5Tget_member_value = int Function(
+    int type_id, int membno, Pointer value);
 
 typedef H5Treclaim_c = Int64 Function(
     Int64 type_id, Int64 space_id, Int64 plist_id, Pointer buf);
@@ -88,63 +93,193 @@ typedef H5Treclaim = int Function(
     int type_id, int space_id, int plist_id, Pointer buf);
 
 class H5TBindings {
-  final H5Tclose close;
-  final Pointer<NativeFunction<Void Function(Pointer<Void>)>> closePtr;
-  final H5Tget_class getClass;
-  final H5Tget_super getSuper;
-  final H5Tdetect_class detectClass;
-  final H5Tget_size getSize;
-  final H5Tis_variable_str isVariableStr;
-  final H5Tget_native_type getNativeType;
-  final H5Tget_nmembers getNMembers;
-  final H5Tget_member_type getMemberType;
-  final H5Tget_member_class getMemberClass;
-  final H5Tget_member_offset getMemberOffset;
-  final H5Tget_member_name getMemberName;
-  final H5Tget_member_value getMemberValue;
-  final H5Treclaim reclaim;
+  final H5Tclose __close;
+  final H5Tget_class __getClass;
+  final H5Tget_super __getSuper;
+  final H5Tdetect_class __detectClass;
+  final H5Tget_size __getSize;
+  final H5Tis_variable_str __isVariableStr;
+  final H5Tget_native_type __getNativeType;
+  final H5Tget_nmembers __getNMembers;
+  final H5Tget_member_type __getMemberType;
+  final H5Tget_member_class __getMemberClass;
+  final H5Tget_member_offset __getMemberOffset;
+  final H5Tget_member_name __getMemberName;
+  final H5Tget_member_value __getMemberValue;
+  final H5Treclaim __reclaim;
+
+  final H5free_memory __freeMemory;
 
   H5TBindings(DynamicLibrary HDF5Lib)
-      : close =
+      : __close =
             HDF5Lib.lookup<NativeFunction<H5Tclose_c>>('H5Tclose').asFunction(),
-        closePtr = HDF5Lib.lookup<NativeFunction<Void Function(Pointer<Void>)>>(
-            'H5Tclose'),
-        getClass =
+        __getClass =
             HDF5Lib.lookup<NativeFunction<H5Tget_class_c>>('H5Tget_class')
                 .asFunction(),
-        getSuper =
+        __getSuper =
             HDF5Lib.lookup<NativeFunction<H5Tget_super_c>>('H5Tget_super')
                 .asFunction(),
-        detectClass =
+        __detectClass =
             HDF5Lib.lookup<NativeFunction<H5Tdetect_class_c>>('H5Tdetect_class')
                 .asFunction(),
-        getSize = HDF5Lib.lookup<NativeFunction<H5Tget_size_c>>('H5Tget_size')
+        __getSize = HDF5Lib.lookup<NativeFunction<H5Tget_size_c>>('H5Tget_size')
             .asFunction(),
-        isVariableStr = HDF5Lib.lookup<NativeFunction<H5Tis_variable_str_c>>(
+        __isVariableStr = HDF5Lib.lookup<NativeFunction<H5Tis_variable_str_c>>(
                 'H5Tis_variable_str')
             .asFunction(),
-        getNativeType = HDF5Lib.lookup<NativeFunction<H5Tget_native_type_c>>(
+        __getNativeType = HDF5Lib.lookup<NativeFunction<H5Tget_native_type_c>>(
                 'H5Tget_native_type')
             .asFunction(),
-        getNMembers =
+        __getNMembers =
             HDF5Lib.lookup<NativeFunction<H5Tget_nmembers_c>>('H5Tget_nmembers')
                 .asFunction(),
-        getMemberType = HDF5Lib.lookup<NativeFunction<H5Tget_member_type_c>>(
+        __getMemberType = HDF5Lib.lookup<NativeFunction<H5Tget_member_type_c>>(
                 'H5Tget_member_type')
             .asFunction(),
-        getMemberClass = HDF5Lib.lookup<NativeFunction<H5Tget_member_class_c>>(
-                'H5Tget_member_class')
-            .asFunction(),
-        getMemberOffset =
+        __getMemberClass =
+            HDF5Lib.lookup<NativeFunction<H5Tget_member_class_c>>(
+                    'H5Tget_member_class')
+                .asFunction(),
+        __getMemberOffset =
             HDF5Lib.lookup<NativeFunction<H5Tget_member_offset_c>>(
                     'H5Tget_member_offset')
                 .asFunction(),
-        getMemberName = HDF5Lib.lookup<NativeFunction<H5Tget_member_name_c>>(
+        __getMemberName = HDF5Lib.lookup<NativeFunction<H5Tget_member_name_c>>(
                 'H5Tget_member_name')
             .asFunction(),
-        getMemberValue = HDF5Lib.lookup<NativeFunction<H5Tget_member_value_c>>(
-                'H5Tget_member_value')
+        __getMemberValue =
+            HDF5Lib.lookup<NativeFunction<H5Tget_member_value_c>>(
+                    'H5Tget_member_value')
+                .asFunction(),
+        __reclaim = HDF5Lib.lookup<NativeFunction<H5Treclaim_c>>('H5Treclaim')
             .asFunction(),
-        reclaim = HDF5Lib.lookup<NativeFunction<H5Treclaim_c>>('H5Treclaim')
-            .asFunction();
+        __freeMemory =
+            HDF5Lib.lookup<NativeFunction<H5free_memory_c>>('H5free_memory')
+                .asFunction();
+
+  void close(int type_id) {
+    final status = __close(type_id);
+    if (status < 0) {
+      logger.severe('Failed to close datatype');
+      throw Exception('Failed to close datatype');
+    }
+  }
+
+  int getClass(int type_id) {
+    final cls = __getClass(type_id);
+    if (cls < 0) {
+      logger.severe('Failed to get datatype class');
+      throw Exception('Failed to get datatype class');
+    }
+    return cls;
+  }
+
+  int getSuper(int type_id) {
+    final super_id = __getSuper(type_id);
+    if (super_id < 0) {
+      logger.severe('Failed to get super datatype');
+      throw Exception('Failed to get super datatype');
+    }
+    return super_id;
+  }
+
+  int detectClass(int type_id, int cls) {
+    final status = __detectClass(type_id, cls);
+    if (status < 0) {
+      logger.severe('Failed to detect datatype class');
+      throw Exception('Failed to detect datatype class');
+    }
+    return status;
+  }
+
+  int getSize(int type_id) {
+    final size = __getSize(type_id);
+    if (size < 0) {
+      logger.severe('Failed to get datatype size');
+      throw Exception('Failed to get datatype size');
+    }
+    return size;
+  }
+
+  int isVariableStr(int type_id) {
+    final isVarStr = __isVariableStr(type_id);
+    if (isVarStr < 0) {
+      logger.severe('Failed to check if datatype is variable-length string');
+      throw Exception('Failed to check if datatype is variable-length string');
+    }
+    return isVarStr;
+  }
+
+  int getNativeType(int type_id, int direction) {
+    final native_type = __getNativeType(type_id, direction);
+    if (native_type < 0) {
+      logger.severe('Failed to get native datatype');
+      throw Exception('Failed to get native datatype');
+    }
+    return native_type;
+  }
+
+  int getNMembers(int type_id) {
+    final nMembers = __getNMembers(type_id);
+    if (nMembers < 0) {
+      logger.severe('Failed to get number of members in compound datatype');
+      throw Exception('Failed to get number of members in compound datatype');
+    }
+    return nMembers;
+  }
+
+  int getMemberType(int type_id, int membno) {
+    final member_type = __getMemberType(type_id, membno);
+    if (member_type < 0) {
+      logger.severe('Failed to get member datatype');
+      throw Exception('Failed to get member datatype');
+    }
+    return member_type;
+  }
+
+  int getMemberClass(int type_id, int membno) {
+    final member_class = __getMemberClass(type_id, membno);
+    if (member_class < 0) {
+      logger.severe('Failed to get member class');
+      throw Exception('Failed to get member class');
+    }
+    return member_class;
+  }
+
+  int getMemberOffset(int type_id, int membno) {
+    final offset = __getMemberOffset(type_id, membno);
+    if (offset < 0) {
+      logger.severe('Failed to get member offset');
+      throw Exception('Failed to get member offset');
+    }
+    return offset;
+  }
+
+  String getMemberName(int type_id, int membno) {
+    Pointer<Uint8> memberNamePtr = __getMemberName(type_id, membno);
+    if (memberNamePtr == nullptr) {
+      logger.severe('Failed to get member name');
+      throw Exception('Failed to get member name');
+    }
+
+    String memberName = charToString(memberNamePtr);
+    __freeMemory(memberNamePtr);
+    return memberName;
+  }
+
+  void getMemberValue(int type_id, int membno, Pointer buffer) {
+    final status = __getMemberValue(type_id, membno, buffer);
+    if (status < 0) {
+      logger.severe('Failed to get member value');
+      throw Exception('Failed to get member value');
+    }
+  }
+
+  void reclaim(int type_id, int space_id, int plist_id, Pointer buf) {
+    final status = __reclaim(type_id, space_id, plist_id, buf);
+    if (status < 0) {
+      logger.severe('Failed to reclaim datatype');
+      throw Exception('Failed to reclaim datatype');
+    }
+  }
 }

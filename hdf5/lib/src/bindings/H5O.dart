@@ -2,6 +2,7 @@ import 'dart:ffi';
 
 import 'package:hdf5/src/bindings/HDF5_bindings.dart';
 import 'package:hdf5/src/c_to_dart_calls/utility.dart';
+import 'package:hdf5/src/utility/logging.dart';
 
 // enum H5O_type_t
 const int H5O_TYPE_UNKNOWN = -1; //**< Unknown object type        */
@@ -91,6 +92,7 @@ class H5OBindings {
     final status = __getInfoByIdx(loc_id, grp_name, H5_INDEX_NAME, H5_ITER_INC,
         index, oinfo, H5O_INFO_BASIC, H5P_DEFAULT);
     if (status < 0) {
+      logger.severe('Failed to get link info by index for location $loc_id');
       throw Exception('Failed to get link info by index');
     }
   }

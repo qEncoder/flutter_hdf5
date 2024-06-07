@@ -3,6 +3,7 @@ import 'package:ffi/ffi.dart';
 
 import 'package:hdf5/src/bindings/H5.dart';
 import 'package:hdf5/src/c_to_dart_calls/utility.dart';
+import 'package:hdf5/src/utility/logging.dart';
 
 const int H5R_BADTYPE = -1;
 const int H5R_OBJECT = 0;
@@ -50,6 +51,7 @@ class H5RBindings {
     // note that there is also an error in the docs, oapl_id not mentioned (observable in the source code).
     final object_id = __deReference(obj_id, H5P_DEFAULT, H5R_OBJECT, ref);
     if (object_id < 0) {
+      logger.severe('Failed to dereference reference');
       throw Exception('Failed to dereference');
     }
     return object_id;
@@ -58,6 +60,7 @@ class H5RBindings {
   String getName(int obj_id, Pointer ref) {
     final nameSize = __getName(obj_id, H5R_OBJECT, ref, nullptr, 0);
     if (nameSize < 0) {
+      logger.severe('Failed to get name of reference (size)');
       throw Exception('Failed to get name');
     }
 
@@ -65,6 +68,7 @@ class H5RBindings {
     final status = __getName(obj_id, H5R_OBJECT, ref, name, nameSize + 1);
     if (status < 0) {
       calloc.free(name);
+      logger.severe('Failed to get name of reference');
       throw Exception('Failed to get name');
     }
 
@@ -78,6 +82,7 @@ class H5RBindings {
     final status = __getObjType(obj_id, H5R_OBJECT, ref, objType);
     if (status < 0) {
       calloc.free(objType);
+      logger.severe('Failed to get object type of reference');
       throw Exception('Failed to get object type');
     }
 

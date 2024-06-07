@@ -96,7 +96,8 @@ class H5DBindings {
     final status = __close(dset_id);
     logger.info('Closed dataset with id $dset_id');
     if (status < 0) {
-      logger.severe('Failed to close dataset with status $status and id $dset_id');
+      logger.severe(
+          'Failed to close dataset with status $status and id $dset_id');
       throw Exception("Failed to close dataset");
     }
     return status;
@@ -104,6 +105,7 @@ class H5DBindings {
 
   int getSpace(int dset_id) {
     final space = __getSpace(dset_id);
+    logger.fine('Got dataspace for dataset with id $dset_id');
     if (space < 0) {
       logger.severe('Failed to get dataspace for dataset with id $dset_id');
       throw Exception("Failed to get dataspace");
@@ -123,7 +125,8 @@ class H5DBindings {
   int getCreatePlist(int dset_id) {
     final plist = __getCreatePlist(dset_id);
     if (plist < 0) {
-      logger.severe('Failed to get create property list for dataset with id $dset_id');
+      logger.severe(
+          'Failed to get create property list for dataset with id $dset_id');
       throw Exception("Failed to get create property list");
     }
     return plist;
@@ -132,7 +135,8 @@ class H5DBindings {
   int getAccessPlist(int dset_id) {
     final plist = __getAccessPlist(dset_id);
     if (plist < 0) {
-      logger.severe('Failed to get access property list for dataset with id $dset_id');
+      logger.severe(
+          'Failed to get access property list for dataset with id $dset_id');
       throw Exception("Failed to get access property list");
     }
     return plist;
@@ -151,6 +155,7 @@ class H5DBindings {
 
   int refresh(int dset_id) {
     final status = __refresh(dset_id);
+    logger.fine('Refreshed dataset with id $dset_id');
     if (status < 0) {
       logger.severe('Failed to refresh dataset with id $dset_id');
       throw Exception("Failed to refresh dataset");

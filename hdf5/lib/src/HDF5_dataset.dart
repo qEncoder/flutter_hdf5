@@ -1,5 +1,3 @@
-import 'package:hdf5/src/bindings/H5D.dart';
-import 'package:hdf5/src/bindings/H5P.dart';
 import 'package:hdf5/src/bindings/HDF5_bindings.dart';
 import 'package:hdf5/src/HDF5_attributes.dart';
 import 'package:hdf5/src/c_to_dart_calls/space_info.dart';
@@ -61,7 +59,7 @@ class H5Dataset {
     spaceInfo.dispose();
   }
 
-  String get datatype {
+  String get dataType {
     // Returns the datatype of the dataset as a string representation
     int typeId = HDF5Bindings().H5D.getType(datasetId);
     TypeInfo typeInfo = getTypeInfo(typeId);

@@ -184,7 +184,7 @@ void print_dataset_info() {
   for (String datasetName in group.datasets) {
     H5Dataset dataset = group[datasetName];
     print(dataset.name);
-    print("Type : ${dataset.datatype}");
+    print("Type : ${dataset.dataType}");
     print("Layout : ${dataset.layout}", );
     print("StorageSize : ${dataset.storageSize}");
     print("ndim : ${dataset.ndim}");

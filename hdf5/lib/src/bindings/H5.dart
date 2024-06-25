@@ -1,7 +1,12 @@
 import 'dart:ffi';
 
+import 'package:hdf5/src/utility/logging.dart';
+
 typedef H5free_memory_c = Int64 Function(Pointer mem);
 typedef H5free_memory = int Function(Pointer mem);
+
+typedef H5open_c = Int32 Function();
+typedef H5open = int Function();
 
 const int H5P_DEFAULT = 0;
 
@@ -20,7 +25,17 @@ const int H5_ITER_N = 3;
 
 class H5Bindings{
   final H5free_memory freeMemory;
+  final H5open __open;
 
   H5Bindings(DynamicLibrary HDF5Lib):
-    freeMemory = HDF5Lib.lookup<NativeFunction<H5free_memory_c>>('H5free_memory').asFunction();
+    freeMemory = HDF5Lib.lookup<NativeFunction<H5free_memory_c>>('H5free_memory').asFunction(),
+    __open = HDF5Lib.lookup<NativeFunction<H5open_c>>('H5open').asFunction();
+  
+  void open(){
+    int status = __open();
+    if(status < 0){
+      logger.severe("Failed to open HDF5 library");
+      throw Exception("Failed to open HDF5 library");
+    }
+  }
 }

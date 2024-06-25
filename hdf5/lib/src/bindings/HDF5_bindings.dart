@@ -36,6 +36,9 @@ export 'H5S.dart'
     show
         H5S_ALL,
         H5S_seloper_t;
+export 'H5P.dart'
+    show 
+        FilterSettings;
 export 'H5R.dart'
     show H5R_type_t;
 export 'H5Z.dart'
@@ -86,7 +89,8 @@ class HDF5Bindings {
     final DynamicLibrary HDF5Lib = DynamicLibrary.open(libraryPath);
     logger.info('HDF5 library loaded');
 
-    H5 = H5Bindings(HDF5Lib);
+    // initialize the library (needed to load the values of the constants)
+    H5 = H5Bindings(HDF5Lib)..open();
     H5A = H5ABindings(HDF5Lib);
     H5D = H5DBindings(HDF5Lib);
     H5F = H5FBindings(HDF5Lib);

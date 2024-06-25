@@ -12,6 +12,9 @@ class AttributeMgr extends Iterable {
   List<String> get keys => attrNames;
   List<dynamic> get values => attrNames.map((e) => readAttr(file, parentLocId, e)).toList();
 
+  bool containsKey(String key) => attrNames.contains(key);
+  bool containsValue(dynamic value) => values.contains(value);
+  
   @override
   Iterator<MapEntry<String, dynamic>> get iterator => __AttributeMgrIterator(this);
 

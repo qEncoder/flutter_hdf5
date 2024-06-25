@@ -1,6 +1,7 @@
 import 'dart:ffi';
 
 import 'package:hdf5/src/bindings/HDF5_bindings.dart';
+import 'package:hdf5/src/utility/logging.dart';
 
 class TypeInfo implements Finalizable {
   H5T_class_t type;
@@ -8,16 +9,15 @@ class TypeInfo implements Finalizable {
   int size;
   int typeId;
 
-  TypeInfo(this.type, this.nativeTypeId, this.size, {this.typeId = -1}) {
-  }
+  TypeInfo(this.type, this.nativeTypeId, this.size, {this.typeId = -1});
 
   @override
   String toString() {
     if (type == H5T_class_t.INTEGER || type == H5T_class_t.FLOAT || type == H5T_class_t.BITFIELD) {
       try{
         return HDF5Bindings().H5T.getBaseTypeFromNativeType(nativeTypeId, size).toString();
-      } catch (e) {
-        print('dype lookup failed');
+      } catch (e, stacktrace) {
+        logger.warning("Failed to get base type from native type: $e\n$stacktrace");
         return type.toString();
       }
     } else {

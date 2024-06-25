@@ -1,22 +1,25 @@
 import 'dart:ffi';
 
+import 'package:hdf5/src/utility/enum_utils.dart';
 import 'package:hdf5/src/utility/logging.dart';
 
-const int H5D_LAYOUT_ERROR = -1;
-const int H5D_COMPACT = 0;
-const int H5D_CONTIGUOUS = 1;
-const int H5D_CHUNKED = 2;
-const int H5D_VIRTUAL = 3;
-const int H5D_NLAYOUTS = 4;
+enum H5D_layout_t implements IndexEnum<H5D_layout_t> {
+  LAYOUT_ERROR(-1, "Layout Error"),
+  COMPACT(0, "Compact"),
+  CONTIGUOUS(1, "Contiguous"),
+  CHUNKED(2, "Chunked"),
+  VIRTUAL(3, "Virtual"),
+  NLAYERS(4, "NLayers");
 
-const Map<int, String> H5D_layout_t = {
-  -1: "H5D_LAYOUT_ERROR",
-  0: "H5D_COMPACT",
-  1: "H5D_CONTIGUOUS",
-  2: "H5D_CHUNKED",
-  3: "H5D_VIRTUAL",
-  4: "H5D_NLAYOUTS"
-};
+  final int value;
+  final String string;
+  const H5D_layout_t(this.value, this.string);
+
+  @override
+  toString() => string;
+
+  static H5D_layout_t fromIdx(int value) => IndexEnum.fromIdx(H5D_layout_t.values, value);
+}
 
 typedef H5Dopen_c = Int64 Function(
     Int64 loc_id, Pointer<Uint8> name, Int64 lapl_id);
@@ -40,6 +43,8 @@ typedef H5Dget_create_plist = int Function(int dset_id);
 typedef H5Dget_access_plist_c = Int64 Function(Int64 dset_id);
 typedef H5Dget_access_plist = int Function(int dset_id);
 
+typedef H5Dget_storage_size_c = Int64 Function(Int64 dset_id);
+typedef H5Dget_storage_size = int Function(int dset_id);
 typedef H5Dread_c = Int64 Function(Int64 dset_id, Int64 mem_type_id,
     Int64 mem_space_id, Int64 file_space_id, Int64 dxpl_id, Pointer buf);
 typedef H5Dread = int Function(int dset_id, int mem_type_id, int mem_space_id,
@@ -56,6 +61,9 @@ class H5DBindings {
   final H5Dget_type __getType;
   final H5Dget_create_plist __getCreatePlist;
   final H5Dget_access_plist __getAccessPlist;
+
+  final H5Dget_storage_size __getStorageSize;
+
   final H5Dread __read;
   final H5Drefresh __refresh;
 
@@ -76,6 +84,10 @@ class H5DBindings {
         __getAccessPlist =
             HDF5Lib.lookup<NativeFunction<H5Dget_access_plist_c>>(
                     'H5Dget_access_plist')
+                .asFunction(),
+        __getStorageSize =
+            HDF5Lib.lookup<NativeFunction<H5Dget_storage_size_c>>(
+                    'H5Dget_storage_size')
                 .asFunction(),
         __read =
             HDF5Lib.lookup<NativeFunction<H5Dread_c>>('H5Dread').asFunction(),
@@ -140,6 +152,16 @@ class H5DBindings {
       throw Exception("Failed to get access property list");
     }
     return plist;
+  }
+
+  int getStorageSize(int dset_id) {
+    final size = __getStorageSize(dset_id);
+    if (size < 0) {
+      logger.severe(
+          'Failed to get storage size for dataset with id $dset_id');
+      throw Exception("Failed to get storage size");
+    }
+    return size;
   }
 
   int read(int dset_id, int mem_type_id, int mem_space_id, int file_space_id,

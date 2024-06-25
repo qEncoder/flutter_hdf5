@@ -67,7 +67,7 @@ dynamic cAttrDataToDart(
 
   dynamic output;
   switch (typeInfo.type) {
-    case H5T_STRING:
+    case H5T_class_t.STRING:
       if (HDF5lib.H5T.isVariableStr(typeInfo.nativeTypeId) > 0) {
         Pointer<Pointer<Uint8>> ptrAdressList =
             Pointer.fromAddress(myData.address);
@@ -99,7 +99,7 @@ dynamic cAttrDataToDart(
         }
       }
       break;
-    case H5T_INTEGER:
+    case H5T_class_t.INTEGER:
       switch (typeInfo.size) {
         case 1:
           Pointer<Int8> integerList = myData.cast<Int8>();
@@ -154,7 +154,7 @@ dynamic cAttrDataToDart(
           throw "Currenly only supporting signed int32 and int64.";
       }
       break;
-    case H5T_FLOAT:
+    case H5T_class_t.FLOAT:
       switch (typeInfo.size) {
         case 4:
           Pointer<Float> floatList = Pointer.fromAddress(myData.address);
@@ -192,28 +192,28 @@ dynamic cAttrDataToDart(
           throw "Currenly only supporting float32 and double64.";
       }
       break;
-    case H5T_REFERENCE:
+    case H5T_class_t.REFERENCE:
       Pointer<Int64> referenceList = myData.cast<Int64>();
       switch (spaceInfo.rank) {
         case 0:
           int objId = HDF5lib.H5R.deReference(file.fileId, referenceList);
           String name = HDF5lib.H5R.getName(objId, referenceList);
 
-          int objType = HDF5lib.H5R.getObjType(objId, referenceList);
+          H5O_type_t objType = HDF5lib.H5R.getObjType(objId, referenceList);
 
           switch (objType) {
-            case H5O_TYPE_GROUP:
+            case H5O_type_t.GROUP:
               // group seems to close with the closing of the reference.
               HDF5lib.H5G.close(objId);
               output = file.openGroup(name);
               break;
-            case H5O_TYPE_DATASET:
+            case H5O_type_t.DATASET:
               // dataset seems to close with the closing of the reference.
               HDF5lib.H5D.close(objId);
               output = file.openDataset(name);
               break;
             default:
-              throw "object type ${H5O_type_t[objType]} ($objType) not supported";
+              throw "object type ${objType.string} (${objType.value}) not supported";
           }
           break;
         case 1:
@@ -228,7 +228,7 @@ dynamic cAttrDataToDart(
           throw H5RankException(spaceInfo.rank);
       }
 
-    case H5T_ENUM:
+    case H5T_class_t.ENUM:
       Map enumDict = {};
 
       int nMembers = HDF5lib.H5T.getNMembers(typeInfo.nativeTypeId);
@@ -253,10 +253,10 @@ dynamic cAttrDataToDart(
       var value = cAttrDataToDart(file, myData, enumTypeInfo, enumSpaceInfo);
       return enumDict[value];
 
-    case H5T_ARRAY:
+    case H5T_class_t.ARRAY:
       throw "Array attributes currently not supported.";
 
-    case H5T_VLEN:
+    case H5T_class_t.VLEN:
       output = [];
       Pointer<hvl_t> dataPtr = Pointer.fromAddress(myData.address);
       TypeInfo VLEN_TYPE =
@@ -273,7 +273,7 @@ dynamic cAttrDataToDart(
       VLEN_TYPE.dispose();
       break;
 
-    case H5T_COMPOUND:
+    case H5T_class_t.COMPOUND:
       int nMembers = HDF5lib.H5T.getNMembers(typeInfo.nativeTypeId);
       List<CompoundMemberInfo> compoundMemberInfo = [];
 

@@ -2,36 +2,55 @@ import 'dart:ffi';
 import 'package:hdf5/src/bindings/H5.dart';
 
 import 'package:hdf5/src/c_to_dart_calls/utility.dart';
+import 'package:hdf5/src/utility/enum_utils.dart';
 import 'package:hdf5/src/utility/logging.dart';
 
-// typedef enum H5T_class_t
-const int H5T_NO_CLASS = -1;
-const int H5T_INTEGER = 0;
-const int H5T_FLOAT = 1;
-const int H5T_TIME = 2;
-const int H5T_STRING = 3;
-const int H5T_BITFIELD = 4;
-const int H5T_OPAQUE = 5;
-const int H5T_COMPOUND = 6;
-const int H5T_REFERENCE = 7;
-const int H5T_ENUM = 8;
-const int H5T_VLEN = 9;
-const int H5T_ARRAY = 10;
+enum H5T_class_t implements IndexEnum<H5T_class_t>{
+  NO_CLASS(-1, "No Class"),
+  INTEGER(0, "Integer"),
+  FLOAT(1, "Float"),
+  TIME(2, "Time"),
+  STRING(3, "String"),
+  BITFIELD(4, "Bitfield"),
+  OPAQUE(5, "Opaque"),
+  COMPOUND(6, "Compound"),
+  REFERENCE(7, "Reference"),
+  ENUM(8, "Enum"),
+  VLEN(9, "Vlen"),
+  ARRAY(10, "Array");
 
-const Map<int, String> H5T_class_t = {
-  -1: "H5T_NO_CLASS",
-  0: "H5T_INTEGER",
-  1: "H5T_FLOAT",
-  2: "H5T_TIME",
-  3: "H5T_STRING",
-  4: "H5T_BITFIELD",
-  5: "H5T_OPAQUE",
-  6: "H5T_COMPOUND",
-  7: "H5T_REFERENCE",
-  8: "H5T_ENUM",
-  9: "H5T_VLEN",
-  10: "H5T_ARRAY"
-};
+  final int value;
+  final String string;
+  const H5T_class_t(this.value, this.string);
+
+  @override
+  toString() => string;
+
+  static H5T_class_t fromIdx(int value) => IndexEnum.fromIdx(H5T_class_t.values, value);
+}
+
+enum BaseType{
+  Char,
+  UChar,
+  Int8,
+  Int16,
+  Int32,
+  Int64,
+  Uint8,
+  Uint16,
+  Uint32,
+  Uint64,
+  Float16,
+  Float32,
+  Float64,
+  Binary8,
+  Binary16,
+  Binary32,
+  Binary64;
+
+  @override
+  toString() => name;
+}
 
 final class hvl_t extends Struct {
   @Size()
@@ -65,6 +84,9 @@ typedef H5Tis_variable_str = int Function(int type_id);
 
 typedef H5Tget_native_type_c = Int64 Function(Int64 type_id, Int64 direction);
 typedef H5Tget_native_type = int Function(int type_id, int direction);
+
+typedef H5Tequal_c = Int64 Function(Int64 type_id1, Int64 type_id2);
+typedef H5Tequal = int Function(int type_id1, int type_id2);
 
 typedef H5Tget_nmembers_c = Int64 Function(Int64 type_id);
 typedef H5Tget_nmembers = int Function(int type_id);
@@ -100,6 +122,7 @@ class H5TBindings {
   final H5Tget_size __getSize;
   final H5Tis_variable_str __isVariableStr;
   final H5Tget_native_type __getNativeType;
+  final H5Tequal __equalType;
   final H5Tget_nmembers __getNMembers;
   final H5Tget_member_type __getMemberType;
   final H5Tget_member_class __getMemberClass;
@@ -109,6 +132,24 @@ class H5TBindings {
   final H5Treclaim __reclaim;
 
   final H5free_memory __freeMemory;
+
+  final int H5T_NATIVE_CHAR;
+  final int H5T_NATIVE_SHORT;
+  final int H5T_NATIVE_INT;
+  final int H5T_NATIVE_LONG;
+  final int H5T_NATIVE_LLONG;
+  final int H5T_NATIVE_UCHAR;
+  final int H5T_NATIVE_USHORT;
+  final int H5T_NATIVE_UINT;
+  final int H5T_NATIVE_ULONG;
+  final int H5T_NATIVE_ULLONG;
+  final int H5T_NATIVE_FLOAT;
+  final int H5T_NATIVE_DOUBLE;
+  final int H5T_NATIVE_LDOUBLE;
+  final int H5T_NATIVE_B8;
+  final int H5T_NATIVE_B16;
+  final int H5T_NATIVE_B32;
+  final int H5T_NATIVE_B64;
 
   H5TBindings(DynamicLibrary HDF5Lib)
       : __close =
@@ -130,6 +171,8 @@ class H5TBindings {
         __getNativeType = HDF5Lib.lookup<NativeFunction<H5Tget_native_type_c>>(
                 'H5Tget_native_type')
             .asFunction(),
+        __equalType =
+            HDF5Lib.lookup<NativeFunction<H5Tequal_c>>('H5Tequal').asFunction(),
         __getNMembers =
             HDF5Lib.lookup<NativeFunction<H5Tget_nmembers_c>>('H5Tget_nmembers')
                 .asFunction(),
@@ -155,7 +198,25 @@ class H5TBindings {
             .asFunction(),
         __freeMemory =
             HDF5Lib.lookup<NativeFunction<H5free_memory_c>>('H5free_memory')
-                .asFunction();
+                .asFunction(),
+        
+        H5T_NATIVE_CHAR = HDF5Lib.lookup<Int64>('H5T_NATIVE_SCHAR_g').value,
+        H5T_NATIVE_SHORT = HDF5Lib.lookup<Int64>('H5T_NATIVE_UCHAR_g').value,
+        H5T_NATIVE_INT = HDF5Lib.lookup<Int64>('H5T_NATIVE_INT_g').value,
+        H5T_NATIVE_LONG = HDF5Lib.lookup<Int64>('H5T_NATIVE_LONG_g').value,
+        H5T_NATIVE_LLONG = HDF5Lib.lookup<Int64>('H5T_NATIVE_LLONG_g').value,
+        H5T_NATIVE_UCHAR = HDF5Lib.lookup<Int64>('H5T_NATIVE_UCHAR_g').value,
+        H5T_NATIVE_USHORT = HDF5Lib.lookup<Int64>('H5T_NATIVE_USHORT_g').value,
+        H5T_NATIVE_UINT = HDF5Lib.lookup<Int64>('H5T_NATIVE_UINT_g').value,
+        H5T_NATIVE_ULONG = HDF5Lib.lookup<Int64>('H5T_NATIVE_ULONG_g').value,
+        H5T_NATIVE_ULLONG = HDF5Lib.lookup<Int64>('H5T_NATIVE_ULLONG_g').value,
+        H5T_NATIVE_FLOAT = HDF5Lib.lookup<Int64>('H5T_NATIVE_FLOAT_g').value,
+        H5T_NATIVE_DOUBLE = HDF5Lib.lookup<Int64>('H5T_NATIVE_DOUBLE_g').value,
+        H5T_NATIVE_LDOUBLE = HDF5Lib.lookup<Int64>('H5T_NATIVE_LDOUBLE_g').value,
+        H5T_NATIVE_B8 = HDF5Lib.lookup<Int64>('H5T_NATIVE_B8_g').value,
+        H5T_NATIVE_B16 = HDF5Lib.lookup<Int64>('H5T_NATIVE_B16_g').value,
+        H5T_NATIVE_B32 = HDF5Lib.lookup<Int64>('H5T_NATIVE_B32_g').value,
+        H5T_NATIVE_B64 = HDF5Lib.lookup<Int64>('H5T_NATIVE_B64_g').value;
 
   void close(int type_id) {
     final status = __close(type_id);
@@ -165,13 +226,13 @@ class H5TBindings {
     }
   }
 
-  int getClass(int type_id) {
+  H5T_class_t getClass(int type_id) {
     final cls = __getClass(type_id);
     if (cls < 0) {
       logger.severe('Failed to get datatype class');
       throw Exception('Failed to get datatype class');
     }
-    return cls;
+    return H5T_class_t.fromIdx(cls);
   }
 
   int getSuper(int type_id) {
@@ -280,6 +341,77 @@ class H5TBindings {
     if (status < 0) {
       logger.severe('Failed to reclaim datatype');
       throw Exception('Failed to reclaim datatype');
+    }
+  }
+
+  bool equalType(int type_id1, int type_id2) {
+    final equal = __equalType(type_id1, type_id2);
+    if (equal < 0) {
+      logger.severe('Failed to check if datatypes are equal');
+      throw Exception('Failed to check if datatypes are equal');
+    }
+    return equal == 1;
+  }
+
+  BaseType getBaseTypeFromNativeType(int nativeType, int size) {
+    if (equalType(H5T_NATIVE_CHAR, nativeType)) {
+      return BaseType.Char;
+    } else if (equalType(H5T_NATIVE_UCHAR, nativeType)) {
+      return BaseType.UChar;
+    } else if (equalType(H5T_NATIVE_INT, nativeType) ||
+                equalType(H5T_NATIVE_SHORT, nativeType) ||
+                equalType(H5T_NATIVE_LONG, nativeType) ||
+                equalType(H5T_NATIVE_LLONG, nativeType)) {
+        switch (size){
+          case 1:
+            return BaseType.Int8;
+          case 2:
+            return BaseType.Int16;
+          case 4:
+            return BaseType.Int32;
+          case 8:
+            return BaseType.Int64;
+          default:
+            throw Exception('Unknown size for integer type');
+        }
+    } else if (equalType(H5T_NATIVE_UINT, nativeType) ||
+                equalType(H5T_NATIVE_USHORT, nativeType) ||
+                equalType(H5T_NATIVE_ULONG, nativeType) ||
+                equalType(H5T_NATIVE_ULLONG, nativeType)) {
+        switch (size){
+          case 1:
+            return BaseType.Uint8;
+          case 2:
+            return BaseType.Uint16;
+          case 8:
+            return BaseType.Uint32;
+          case 8:
+            return BaseType.Uint64;
+          default:
+            throw Exception('Unknown size for unsigned integer type');
+        }
+    } else if (equalType(H5T_NATIVE_DOUBLE, nativeType) ||
+                equalType(H5T_NATIVE_LDOUBLE, nativeType)) {
+      return BaseType.Float64;
+    } else if (equalType(H5T_NATIVE_FLOAT, nativeType)) {
+        switch (size){
+          case 2:
+            return BaseType.Float16;
+          case 4:
+            return BaseType.Float32;
+          default:
+            throw Exception('Unknown size for float type');
+        }
+    } else if (equalType(H5T_NATIVE_B8, nativeType)) {
+      return BaseType.Binary8;
+    } else if (equalType(H5T_NATIVE_B16, nativeType)) {
+      return BaseType.Binary16;
+    } else if (equalType(H5T_NATIVE_B32, nativeType)) {
+      return BaseType.Binary32;
+    } else if (equalType(H5T_NATIVE_B64, nativeType)) {
+      return BaseType.Binary64;
+    } else {
+      throw Exception('Unknown native type');
     }
   }
 }

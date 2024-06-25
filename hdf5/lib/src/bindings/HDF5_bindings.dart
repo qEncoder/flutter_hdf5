@@ -15,6 +15,9 @@ export 'H5.dart'
         H5_ITER_N;
 export 'H5F.dart'
     show H5F_ACC_RDONLY, H5F_ACC_RDWR, H5F_ACC_SWMR_WRITE, H5F_ACC_SWMR_READ;
+export 'H5D.dart'
+    show
+        H5D_layout_t;
 export 'H5L.dart' show H5L_info_t, H5L_type_t;
 export 'H5O.dart'
     show
@@ -25,43 +28,18 @@ export 'H5O.dart'
         H5O_INFO_NUM_ATTRS,
         H5O_INFO_HDR,
         H5O_INFO_META_SIZE,
-        H5O_INFO_ALL,
-        H5O_TYPE_UNKNOWN,
-        H5O_TYPE_GROUP,
-        H5O_TYPE_DATASET,
-        H5O_TYPE_NAMED_DATATYPE,
-        H5O_TYPE_MAP,
-        H5O_TYPE_NTYPES;
+        H5O_INFO_ALL;
 export 'H5T.dart'
     show
-        H5T_class_t,
-        H5T_NO_CLASS,
-        H5T_INTEGER,
-        H5T_FLOAT,
-        H5T_TIME,
-        H5T_STRING,
-        H5T_BITFIELD,
-        H5T_OPAQUE,
-        H5T_COMPOUND,
-        H5T_REFERENCE,
-        H5T_ENUM,
-        H5T_VLEN,
-        H5T_ARRAY;
+        H5T_class_t;
 export 'H5S.dart'
     show
         H5S_ALL,
-        H5S_SELECT_NOOP,
-        H5S_SELECT_SET,
-        H5S_SELECT_OR,
-        H5S_SELECT_AND,
-        H5S_SELECT_XOR,
-        H5S_SELECT_NOTB,
-        H5S_SELECT_NOTA,
-        H5S_SELECT_APPEND,
-        H5S_SELECT_PREPEND,
-        H5S_SELECT_INVALID;
+        H5S_seloper_t;
 export 'H5R.dart'
-    show H5R_BADTYPE, H5R_OBJECT, H5R_DATASET_REGION, H5R_MAXTYPE, H5R_type_t;
+    show H5R_type_t;
+export 'H5Z.dart'
+    show H5Z_filter_t;
 
 import 'package:hdf5/src/utility/logging.dart';
 

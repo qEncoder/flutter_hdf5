@@ -34,13 +34,13 @@ ndarray readData(datasetId, dynamic idx) {
   switch (typeInfo.size) {
     case 4:
       switch (typeInfo.type) {
-        case H5T_FLOAT:
+        case H5T_class_t.FLOAT:
           Pointer<Float> dataPointer = data.cast<Float>();
           for (var i = 0; i < dataOut.size; i++) {
             dataOut.flat[i] = dataPointer[i];
           }
           break;
-        case H5T_INTEGER:
+        case H5T_class_t.INTEGER:
           Pointer<Int32> dataPointer = data.cast<Int32>();
           for (var i = 0; i < dataOut.size; i++) {
             int value = dataPointer[i];
@@ -48,18 +48,18 @@ ndarray readData(datasetId, dynamic idx) {
           }
           break;
         default:
-          throw "type ${H5T_class_t[typeInfo.type]} currently not supported";
+          throw "type ${typeInfo.type.string} currently not supported";
       }
       break;
     case 8:
       switch (typeInfo.type) {
-        case H5T_FLOAT:
+        case H5T_class_t.FLOAT:
           Pointer<Double> dataPointer = data.cast<Double>();
           for (int i = 0; i < dataOut.size; i++) {
             dataOut.flat[i] = dataPointer[i];
           }
           break;
-        case H5T_INTEGER:
+        case H5T_class_t.INTEGER:
           Pointer<Int64> dataPointer = data.cast<Int64>();
           for (var i = 0; i < dataOut.size; i++) {
             int value = dataPointer[i];
@@ -67,7 +67,7 @@ ndarray readData(datasetId, dynamic idx) {
           }
           break;
         default:
-          throw "type ${H5T_class_t[typeInfo.type]} currently not supported";
+          throw "type ${typeInfo.type.string} currently not supported";
       }
       break;
     default:

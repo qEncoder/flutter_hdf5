@@ -49,9 +49,10 @@ class _MyHomePageState extends State<MyHomePage> {
   void initState() {
     String fileName = "test/ds_1618824199687898284.hdf5";
     print("start");
-    final attr = returnAllAttributes(fileName);
+    // final attr = returnAllAttributes(fileName);
+    print_dataset_info();
     print("done");
-    print(attr);
+    // print(attr);
 
     super.initState();
   }
@@ -171,6 +172,30 @@ void test_S3_read() {
   print(group.datasets);
 }
 
+
+void print_dataset_info() {
+  String file = "test/ds_1618824199687898284.hdf5";
+  file  = "diamond_ds.hdf5";
+  file = "test/dataset_quantify.hdf5";
+  H5File h5file = H5File.open(file);
+  H5Group group = h5file.group;
+  print(group.datasets);
+
+  for (String datasetName in group.datasets) {
+    H5Dataset dataset = group[datasetName];
+    print(dataset.name);
+    print("Type : ${dataset.datatype}");
+    print("Layout : ${dataset.layout}", );
+    print("StorageSize : ${dataset.storageSize}");
+    print("ndim : ${dataset.ndim}");
+    print("shape : ${dataset.shape}");
+    var filter = dataset.getFilter();
+    print("filter :: ${filter.filterType.string}");
+    print("comression info :: ${filter.compressionInfo}");
+    print("chunk size : ${dataset.getChunkSize()}");
+
+  }
+}
 
 
 Map<String, dynamic> returnAllAttributes(String file){

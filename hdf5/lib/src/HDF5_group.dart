@@ -28,8 +28,8 @@ class H5Group {
 
     calloc.free(namePtr);
     attr = AttributeMgr(file, groupId);
-    groups = getGroupItems(groupId, H5O_TYPE_GROUP);
-    datasets = getGroupItems(groupId, H5O_TYPE_DATASET);
+    groups = getGroupItems(groupId, H5O_type_t.GROUP.value);
+    datasets = getGroupItems(groupId, H5O_type_t.DATASET.value);
     file.children.add(this);
   }
 

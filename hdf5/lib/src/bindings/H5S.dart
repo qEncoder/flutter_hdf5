@@ -1,21 +1,28 @@
 import 'dart:ffi';
 import 'package:ffi/ffi.dart';
+import 'package:hdf5/src/utility/enum_utils.dart';
 import 'package:hdf5/src/utility/logging.dart';
 import 'package:numd/numd.dart';
 
 const int H5S_ALL = 0; // /* (hid_t) */
 
-// H5S_seloper_t
-const int H5S_SELECT_NOOP = -1;
-const int H5S_SELECT_SET = 0;
-const int H5S_SELECT_OR = 1;
-const int H5S_SELECT_AND = 2;
-const int H5S_SELECT_XOR = 3;
-const int H5S_SELECT_NOTB = 4;
-const int H5S_SELECT_NOTA = 5;
-const int H5S_SELECT_APPEND = 6;
-const int H5S_SELECT_PREPEND = 7;
-const int H5S_SELECT_INVALID = 8;
+enum H5S_seloper_t implements IndexEnum<H5S_seloper_t> {
+  NOOP(-1, "NOOP"),
+  SET(0, "SET"),
+  OR(1, "OR"),
+  AND(2, "AND"),
+  XOR(3, "XOR"),
+  NOTB(4, "NOTB"),
+  NOTA(5, "NOTA"),
+  APPEND(6, "APPEND"),
+  PREPEND(7, "PREPEND"),
+  INVALID(8, "INVALID");
+
+
+  final int value;
+  final String string;
+  const H5S_seloper_t(this.value, this.string);
+}
 
 typedef H5Sclose_c = Int64 Function(Int64 space_id);
 typedef H5Sclose = int Function(int space_id);
@@ -127,7 +134,7 @@ class H5SBindings {
     Pointer<Int64> countPtr = intListToCArray(count);
 
     final status = __selectHyperslab(
-        space_id, H5S_SELECT_SET, startPtr, nullptr, countPtr, nullptr);
+        space_id, H5S_seloper_t.SET.value, startPtr, nullptr, countPtr, nullptr);
 
     calloc.free(startPtr);
     calloc.free(countPtr);

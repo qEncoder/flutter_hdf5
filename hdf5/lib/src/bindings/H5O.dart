@@ -2,25 +2,28 @@ import 'dart:ffi';
 
 import 'package:hdf5/src/bindings/HDF5_bindings.dart';
 import 'package:hdf5/src/c_to_dart_calls/utility.dart';
+import 'package:hdf5/src/utility/enum_utils.dart';
 import 'package:hdf5/src/utility/logging.dart';
 
-// enum H5O_type_t
-const int H5O_TYPE_UNKNOWN = -1; //**< Unknown object type        */
-const int H5O_TYPE_GROUP = 0; //**< Object is a group          */
-const int H5O_TYPE_DATASET = 1; //**< Object is a dataset        */
-const int H5O_TYPE_NAMED_DATATYPE = 2; //**< Object is a named data type    */
-const int H5O_TYPE_MAP = 3; //**< Object is a map */
-const int H5O_TYPE_NTYPES =
-    4; //**< Number of different object types (must be last!) */
 
-const Map<int, String> H5O_type_t = {
-  -1: "H5O_TYPE_UNKNOWN",
-  0: "H5O_TYPE_GROUP",
-  1: "H5O_TYPE_DATASET",
-  2: "H5O_TYPE_NAMED_DATATYPE",
-  3: "H5O_TYPE_MAP",
-  4: "H5O_TYPE_NTYPES"
-};
+
+enum H5O_type_t implements IndexEnum<H5O_type_t> {
+  UNKNOWN(-1, "Unknown"),
+  GROUP(0, "Group"),
+  DATASET(1, "Dataset"),
+  NAMED_DATATYPE(2, "Named Datatype"),
+  MAP(3, "Map"),
+  NTYPES(4, "NTypes");
+
+  final int value;
+  final String string;
+  const H5O_type_t(this.value, this.string);
+
+  @override
+  toString() => string;
+
+  static H5O_type_t fromIdx(int value) => IndexEnum.fromIdx(H5O_type_t.values, value);
+}
 
 const int H5O_INFO_BASIC =
     1; //**< Fill in the fileno, addr, type, and rc fields */

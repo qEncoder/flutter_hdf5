@@ -3,15 +3,26 @@ import 'dart:ffi';
 import 'package:hdf5/src/bindings/HDF5_bindings.dart';
 
 class TypeInfo implements Finalizable {
-  int type;
+  H5T_class_t type;
   int nativeTypeId;
   int size;
   int typeId;
 
-  // static final _finalizer = NativeFinalizer(HDF5Bindings().H5T.closePtr);
-
   TypeInfo(this.type, this.nativeTypeId, this.size, {this.typeId = -1}) {
-    // _finalizer.attach(this, Pointer.fromAddress(nativeTypeId));
+  }
+
+  @override
+  String toString() {
+    if (type == H5T_class_t.INTEGER || type == H5T_class_t.FLOAT || type == H5T_class_t.BITFIELD) {
+      try{
+        return HDF5Bindings().H5T.getBaseTypeFromNativeType(nativeTypeId, size).toString();
+      } catch (e) {
+        print('dype lookup failed');
+        return type.toString();
+      }
+    } else {
+      return type.toString();
+    }
   }
 
   void dispose() {
@@ -24,7 +35,7 @@ class TypeInfo implements Finalizable {
 TypeInfo getTypeInfo(int typeId) {
   HDF5Bindings HDF5lib = HDF5Bindings();
 
-  int type = HDF5lib.H5T.getClass(typeId);
+  H5T_class_t type = HDF5lib.H5T.getClass(typeId);
   int nativeTypeId = HDF5lib.H5T.getNativeType(typeId, 0);
   int size = HDF5lib.H5T.getSize(typeId);
 

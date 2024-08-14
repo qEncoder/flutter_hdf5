@@ -37,7 +37,7 @@ TypeInfo getTypeInfo(int typeId) {
 
   H5T_class_t type = HDF5lib.H5T.getClass(typeId);
   int nativeTypeId = HDF5lib.H5T.getNativeType(typeId, 0);
-  int size = HDF5lib.H5T.getSize(typeId);
+  int size = HDF5lib.H5T.getSize(nativeTypeId);
 
   return TypeInfo(type, nativeTypeId, size, typeId: typeId);
 }

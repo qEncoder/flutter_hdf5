@@ -15,9 +15,7 @@ export 'H5.dart'
         H5_ITER_N;
 export 'H5F.dart'
     show H5F_ACC_RDONLY, H5F_ACC_RDWR, H5F_ACC_SWMR_WRITE, H5F_ACC_SWMR_READ;
-export 'H5D.dart'
-    show
-        H5D_layout_t;
+export 'H5D.dart' show H5D_layout_t;
 export 'H5L.dart' show H5L_info_t, H5L_type_t;
 export 'H5O.dart'
     show
@@ -29,20 +27,11 @@ export 'H5O.dart'
         H5O_INFO_HDR,
         H5O_INFO_META_SIZE,
         H5O_INFO_ALL;
-export 'H5T.dart'
-    show
-        H5T_class_t;
-export 'H5S.dart'
-    show
-        H5S_ALL,
-        H5S_seloper_t;
-export 'H5P.dart'
-    show 
-        FilterSettings;
-export 'H5R.dart'
-    show H5R_type_t;
-export 'H5Z.dart'
-    show H5Z_filter_t;
+export 'H5T.dart' show H5T_class_t;
+export 'H5S.dart' show H5S_ALL, H5S_seloper_t;
+export 'H5P.dart' show FilterSettings;
+export 'H5R.dart' show H5R_type_t;
+export 'H5Z.dart' show H5Z_filter_t;
 
 import 'package:hdf5/src/utility/logging.dart';
 
@@ -79,7 +68,7 @@ class HDF5Bindings {
   HDF5Bindings.__new__() {
     String libraryPath;
 
-    libraryPath = 'libhdf5.so';
+    libraryPath = 'hdf5.so';
     if (Platform.isMacOS) {
       libraryPath = 'libHDF5.dylib';
     } else if (Platform.isWindows) {

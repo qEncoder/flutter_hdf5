@@ -99,7 +99,8 @@ dynamic cAttrDataToDart(
         }
       }
       break;
-    case H5T_class_t.INTEGER:
+    case H5T_class_t.INTEGER || H5T_class_t.BITFIELD:
+      // bitfield is interpreted as integer ...
       switch (typeInfo.size) {
         case 1:
           Pointer<Int8> integerList = myData.cast<Int8>();

@@ -1,4 +1,5 @@
 import 'package:hdf5/src/bindings/HDF5_bindings.dart';
+import 'package:hdf5/src/c_to_dart_calls/attributes.dart';
 import 'package:hdf5/src/c_to_dart_calls/type_info.dart';
 import 'package:hdf5/src/c_to_dart_calls/space_info.dart';
 import 'package:hdf5/src/utility/logging.dart';
@@ -8,7 +9,7 @@ import 'package:numd/numd.dart';
 import 'dart:ffi';
 import 'package:ffi/ffi.dart';
 
-ndarray readData(datasetId, dynamic idx) {
+ndarray readData(datasetId, dynamic idx, {bool readImaginary = false}) {
   logger.info("Reading data from dataset $datasetId");
   HDF5Bindings HDF5lib = HDF5Bindings();
 
@@ -31,35 +32,34 @@ ndarray readData(datasetId, dynamic idx) {
       space.fileSpaceId, H5P_DEFAULT, data);
 
   // note that due some limitations in numd, a conversion must be performed to double
-  switch (typeInfo.size) {
-    case 4:
-      switch (typeInfo.type) {
-        case H5T_class_t.FLOAT:
+  switch (typeInfo.type){
+    case H5T_class_t.FLOAT:
+      switch (typeInfo.size){
+        case 4:
           Pointer<Float> dataPointer = data.cast<Float>();
           for (var i = 0; i < dataOut.size; i++) {
             dataOut.flat[i] = dataPointer[i];
           }
           break;
-        case H5T_class_t.INTEGER:
+        case 8:
+          Pointer<Double> dataPointer = data.cast<Double>();
+          for (var i = 0; i < dataOut.size; i++) {
+            dataOut.flat[i] = dataPointer[i];
+          }
+          break;
+        default:
+          throw "Only 32 and 64 bit types are supported.";
+      }
+    case H5T_class_t.INTEGER:
+      switch (typeInfo.size){
+        case 4:
           Pointer<Int32> dataPointer = data.cast<Int32>();
           for (var i = 0; i < dataOut.size; i++) {
             int value = dataPointer[i];
             dataOut.flat[i] = value.toDouble();
           }
           break;
-        default:
-          throw "type ${typeInfo.type.string} currently not supported";
-      }
-      break;
-    case 8:
-      switch (typeInfo.type) {
-        case H5T_class_t.FLOAT:
-          Pointer<Double> dataPointer = data.cast<Double>();
-          for (int i = 0; i < dataOut.size; i++) {
-            dataOut.flat[i] = dataPointer[i];
-          }
-          break;
-        case H5T_class_t.INTEGER:
+        case 8:
           Pointer<Int64> dataPointer = data.cast<Int64>();
           for (var i = 0; i < dataOut.size; i++) {
             int value = dataPointer[i];
@@ -67,12 +67,45 @@ ndarray readData(datasetId, dynamic idx) {
           }
           break;
         default:
-          throw "type ${typeInfo.type.string} currently not supported";
+          throw "Only 32 and 64 bit types are supported.";
       }
-      break;
+    case H5T_class_t.COMPOUND:
+      // assume usage for imaginary numbers
+      int nMembers = HDF5lib.H5T.getNMembers(typeInfo.nativeTypeId);
+      List<CompoundMemberInfo> compoundMemberInfo = [];
+
+      for (int i = 0; i < nMembers; i++) {
+        String memberName = HDF5lib.H5T.getMemberName(typeInfo.nativeTypeId, i);
+
+        int memberType = HDF5lib.H5T.getMemberType(typeInfo.nativeTypeId, i);
+        TypeInfo memberTypeInfo = getTypeInfo(memberType);
+
+        int offset = HDF5lib.H5T.getMemberOffset(typeInfo.nativeTypeId, i);
+
+        compoundMemberInfo.add(CompoundMemberInfo(
+            memberName, SpaceInfo(0, [], []), memberTypeInfo, offset));
+      }
+      if (compoundMemberInfo.length == 2){
+        if (compoundMemberInfo[0].typeInfo.size == 8 &&
+            compoundMemberInfo[1].typeInfo.size == 8 &&
+            compoundMemberInfo[0].typeInfo.type == H5T_class_t.FLOAT &&
+            compoundMemberInfo[1].typeInfo.type == H5T_class_t.FLOAT) {
+          Pointer<Double> dataPointer = data.cast<Double>();
+          for (var i = 0, j = 0; i < dataOut.size; i++, j += 2) {
+            dataOut.flat[i] = readImaginary ? dataPointer[j + 1] : dataPointer[j];
+          }
+        } else {
+          throw "Only 32 bit float types are supported.";
+        }
+      } else {
+        throw "Only complex numbers are supported.";
+      }
+      
     default:
-      throw "Only 32 and 64 bit types are supported.";
+      throw "Only integer and float types are supported.";
+
   }
+
   HDF5lib.H5S.close(space.memSpaceId);
   HDF5lib.H5S.close(space.fileSpaceId);
 

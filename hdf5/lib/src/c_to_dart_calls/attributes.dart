@@ -1,4 +1,5 @@
 import 'dart:ffi';
+import 'dart:typed_data';
 
 import 'package:hdf5/src/HDF5_file.dart';
 import 'package:hdf5/src/bindings/H5T.dart';
@@ -101,93 +102,38 @@ dynamic cAttrDataToDart(
       break;
     case H5T_class_t.INTEGER || H5T_class_t.BITFIELD:
       // bitfield is interpreted as integer ...
+      int dataSize = getNElem(spaceInfo.dim);
       switch (typeInfo.size) {
         case 1:
-          Pointer<Int8> integerList = myData.cast<Int8>();
-          switch (spaceInfo.rank) {
-            case 0:
-              output = integerList[0];
-              break;
-            case 1:
-              output = List<int>.empty(growable: true);
-              for (var i = 0; i < spaceInfo.dim[0]; i++) {
-                output.add(integerList[i]);
-              }
-              break;
-            default:
-              throw H5RankException(spaceInfo.rank);
-          }
+          Int8List integerList = myData.cast<Int8>().asTypedList(dataSize);
+          output = cPtrToFlutterObj<Int8List, int>(integerList, spaceInfo.dim);
           break;
-
+        case 2:
+          Int16List integerList = myData.cast<Int16>().asTypedList(dataSize);
+          output = cPtrToFlutterObj<Int16List, int>(integerList, spaceInfo.dim);
+          break;
         case 4:
-          Pointer<Int32> integerList = myData.cast<Int32>();
-          switch (spaceInfo.rank) {
-            case 0:
-              output = integerList[0];
-              break;
-            case 1:
-              output = List<int>.empty(growable: true);
-              for (var i = 0; i < spaceInfo.dim[0]; i++) {
-                output.add(integerList[i]);
-              }
-              break;
-            default:
-              throw H5RankException(spaceInfo.rank);
-          }
+          Int32List integerList = myData.cast<Int32>().asTypedList(dataSize);
+          output = cPtrToFlutterObj<Int32List, int>(integerList, spaceInfo.dim);
           break;
         case 8:
-          Pointer<Int64> integerList = myData.cast<Int64>();
-          switch (spaceInfo.rank) {
-            case 0:
-              output = integerList[0];
-              break;
-            case 1:
-              output = List<int>.empty(growable: true);
-              for (var i = 0; i < spaceInfo.dim[0]; i++) {
-                output.add(integerList[i]);
-              }
-              break;
-            default:
-              throw H5RankException(spaceInfo.rank);
-          }
+          Int64List integerList = myData.cast<Int64>().asTypedList(dataSize);
+          output = cPtrToFlutterObj<Int64List, int>(integerList, spaceInfo.dim);
           break;
         default:
           throw "Currenly only supporting signed int32 and int64.";
       }
       break;
     case H5T_class_t.FLOAT:
+      int dataSize = getNElem(spaceInfo.dim);
       switch (typeInfo.size) {
         case 4:
-          Pointer<Float> floatList = Pointer.fromAddress(myData.address);
-          switch (spaceInfo.rank) {
-            case 0:
-              output = floatList[0];
-              break;
-            case 1:
-              output = List<double>.empty(growable: true);
-              for (var i = 0; i < spaceInfo.dim[0]; i++) {
-                output.add(floatList[i]);
-              }
-              break;
-            default:
-              throw H5RankException(spaceInfo.rank);
-          }
+          Float32List floatList = myData.cast<Float>().asTypedList(dataSize);
+          output = cPtrToFlutterObj<Float32List, double>(floatList, spaceInfo.dim);
           break;
         case 8:
-          Pointer<Double> floatList = Pointer.fromAddress(myData.address);
-          switch (spaceInfo.rank) {
-            case 0:
-              output = floatList[0];
-              break;
-            case 1:
-              output = List<double>.empty(growable: true);
-              for (var i = 0; i < spaceInfo.dim[0]; i++) {
-                output.add(floatList[i]);
-              }
-              break;
-            default:
-              throw H5RankException(spaceInfo.rank);
-          }
+          Float64List floatList = myData.cast<Double>().asTypedList(dataSize);
+          output = cPtrToFlutterObj<Float64List, double>(floatList, spaceInfo.dim);
           break;
         default:
           throw "Currenly only supporting float32 and double64.";
@@ -336,4 +282,37 @@ dynamic cAttrDataToDart(
   }
 
   return output;
+}
+
+dynamic cPtrToFlutterObj<T1 extends TypedDataList, T2>(T1 pointerList, List<int> dims){
+  if (dims.length == 0) {
+    return pointerList[0] as T2;
+  } else {
+    return buildMultiDimensionalList<T1, T2>(pointerList, dims);
+  }
+}
+
+List<dynamic> buildMultiDimensionalList<T1 extends TypedDataList, T2>(T1 flatList, List<int> dims) {
+  dynamic build(List<int> dims, int index) {
+    if (dims.length == 1) {
+      return flatList.sublist(index, index + dims[0]);
+    }else {
+      int step = dims.skip(1).reduce((a, b) => a * b);
+      List<dynamic> result = [];
+      for (int i = 0; i < dims[0]; i++) {
+        result.add(build(dims.sublist(1), index + i * step));
+      }
+      return result;
+    }
+  }
+
+  return build(dims, 0);
+}
+
+int getNElem(List<int> shape){
+  if (shape.length == 0) {
+    return 1;
+  } else {
+    return shape.reduce((a, b) => a * b);
+  }
 }

@@ -52,6 +52,34 @@ enum BaseType{
   toString() => name;
 }
 
+enum H5T_cset_t implements IndexEnum<H5T_cset_t>{
+  ERROR(-1, "Error"),
+  ASCII(0, "ASCII"),
+  UTF8(1, "UTF-8"),
+  RESERVED_2(2, "Reserved 2"),
+  RESERVED_3(3, "Reserved 3"),
+  RESERVED_4(4, "Reserved 4"),
+  RESERVED_5(5, "Reserved 5"),
+  RESERVED_6(6, "Reserved 6"),
+  RESERVED_7(7, "Reserved 7"),
+  RESERVED_8(8, "Reserved 8"),
+  RESERVED_9(9, "Reserved 9"),
+  RESERVED_10(10, "Reserved 10"),
+  RESERVED_11(11, "Reserved 11"),
+  RESERVED_12(12, "Reserved 12"),
+  RESERVED_13(13, "Reserved 13"),
+  RESERVED_14(14, "Reserved 14"),
+  RESERVED_15(15, "Reserved 15");
+
+  final int value;
+  final String string;
+  const H5T_cset_t(this.value, this.string);
+
+  @override
+  toString() => string;
+
+  static H5T_cset_t fromIdx(int value) => IndexEnum.fromIdx(H5T_cset_t.values, value);
+}
 final class hvl_t extends Struct {
   @Size()
   external int len; /* Length of VL data (in base type units) */
@@ -81,6 +109,9 @@ typedef H5Tget_size = int Function(int type_id);
 
 typedef H5Tis_variable_str_c = Int64 Function(Int64 type_id);
 typedef H5Tis_variable_str = int Function(int type_id);
+
+typedef H5Tget_cset_c = Int64 Function(Int64 type_id);
+typedef H5Tget_cset = int Function(int type_id);
 
 typedef H5Tget_native_type_c = Int64 Function(Int64 type_id, Int64 direction);
 typedef H5Tget_native_type = int Function(int type_id, int direction);
@@ -121,6 +152,7 @@ class H5TBindings {
   final H5Tdetect_class __detectClass;
   final H5Tget_size __getSize;
   final H5Tis_variable_str __isVariableStr;
+  final H5Tget_cset __getCSet;
   final H5Tget_native_type __getNativeType;
   final H5Tequal __equalType;
   final H5Tget_nmembers __getNMembers;
@@ -167,6 +199,9 @@ class H5TBindings {
             .asFunction(),
         __isVariableStr = HDF5Lib.lookup<NativeFunction<H5Tis_variable_str_c>>(
                 'H5Tis_variable_str')
+            .asFunction(),
+        __getCSet = HDF5Lib.lookup<NativeFunction<H5Tget_cset_c>>(
+                'H5Tget_cset')
             .asFunction(),
         __getNativeType = HDF5Lib.lookup<NativeFunction<H5Tget_native_type_c>>(
                 'H5Tget_native_type')
@@ -278,6 +313,15 @@ class H5TBindings {
       throw Exception('Failed to get native datatype');
     }
     return native_type;
+  }
+
+  H5T_cset_t getCSet(int type_id) {
+    final cset = __getCSet(type_id);
+    if (cset < 0) {
+      logger.severe('Failed to get character set');
+      throw Exception('Failed to get character set');
+    }
+    return H5T_cset_t.fromIdx(cset);
   }
 
   int getNMembers(int type_id) {

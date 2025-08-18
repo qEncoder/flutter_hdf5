@@ -1,7 +1,9 @@
 import 'dart:ffi';
 import 'dart:typed_data';
+import 'dart:convert';
 
 import 'package:ffi/ffi.dart';
+import 'package:hdf5/src/bindings/H5T.dart';
 
 Pointer<Uint8> strToChar(String string) {
   Pointer<Uint8> stringPtr = calloc<Uint8>(string.length + 1);
@@ -14,7 +16,18 @@ Pointer<Uint8> strToChar(String string) {
   return stringPtr;
 }
 
-String charToString(Pointer<Uint8> charstr, {maxLen = -1}) {
+String charToString(Pointer<Uint8> charstr, {maxLen = -1, H5T_cset_t cset = H5T_cset_t.ASCII}) {
+  switch (cset) {
+    case H5T_cset_t.ASCII:
+      return charToStringASCII(charstr, maxLen: maxLen);
+    case H5T_cset_t.UTF8:
+      return charToStringUTF8(charstr, maxLen: maxLen);
+    default:
+      throw Exception("Unsupported character set");
+  }
+}
+
+String charToStringASCII(Pointer<Uint8> charstr, {maxLen = -1}) {
   int lenStr = 0;
   while (charstr[lenStr] != 0 && (maxLen == -1 || lenStr < maxLen)) {
     lenStr++;
@@ -25,8 +38,20 @@ String charToString(Pointer<Uint8> charstr, {maxLen = -1}) {
   for (var i = 0; i < lenStr; i++) {
     stringList[i] = charstr[i];
   }
-
   return String.fromCharCodes(stringList);
+}
+
+String charToStringUTF8(Pointer<Uint8> charstr, {maxLen = -1}) {
+  // this uses utf8 encoding.
+  int lenStr = 0;
+  List<int> uint8List = [];
+  while (charstr[lenStr] != 0 && (maxLen == -1 || lenStr < maxLen)) {
+    uint8List.add(charstr[lenStr]);
+    lenStr++;
+  }
+  final utf8Decoder = utf8.decoder;
+  final output = utf8Decoder.convert(uint8List);
+  return output;
 }
 
 void strToArray(String string, Array<Uint8> array, int size) {

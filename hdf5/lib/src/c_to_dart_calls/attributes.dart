@@ -69,18 +69,19 @@ dynamic cAttrDataToDart(
   dynamic output;
   switch (typeInfo.type) {
     case H5T_class_t.STRING:
+      H5T_cset_t cset = HDF5lib.H5T.getCSet(typeInfo.nativeTypeId);
       if (HDF5lib.H5T.isVariableStr(typeInfo.nativeTypeId) > 0) {
         Pointer<Pointer<Uint8>> ptrAdressList =
             Pointer.fromAddress(myData.address);
         switch (spaceInfo.rank) {
           case 0:
-            output = charToString(ptrAdressList[0]);
+            output = charToString(ptrAdressList[0], cset: cset);
             HDF5lib.H5.freeMemory(ptrAdressList[0]);
             break;
           case 1:
             output = [];
             for (var i = 0; i < spaceInfo.dim[0]; i++) {
-              output.add(charToString(ptrAdressList[i]));
+              output.add(charToString(ptrAdressList[i], cset: cset));
               HDF5lib.H5.freeMemory(ptrAdressList[i]);
             }
             break;
@@ -91,7 +92,7 @@ dynamic cAttrDataToDart(
         switch (spaceInfo.rank) {
           case 0:
             Pointer<Uint8> ptrCharData = Pointer.fromAddress(myData.address);
-            output = charToString(ptrCharData, maxLen: typeInfo.size);
+            output = charToString(ptrCharData, maxLen: typeInfo.size, cset: cset);
             break;
           case 1:
             throw "Rank 1 Non-variable strings are currently not supported";

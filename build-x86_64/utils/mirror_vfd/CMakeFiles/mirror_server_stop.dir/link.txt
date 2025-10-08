@@ -1,0 +1,1 @@
+/usr/bin/cc  -std=c99  -O3 -DNDEBUG -arch x86_64 -Wl,-search_paths_first -Wl,-headerpad_max_install_names CMakeFiles/mirror_server_stop.dir/mirror_server_stop.c.o -o ../../bin/mirror_server_stop  -Wl,-rpath,@executable_path/../lib -Wl,-rpath,@executable_path/ -Wl,-rpath,@loader_path/../lib -Wl,-rpath,@loader_path/ ../../bin/libhdf5.310.3.0.dylib

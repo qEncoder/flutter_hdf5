@@ -70,7 +70,8 @@ class HDF5Bindings {
 
     libraryPath = 'hdf5.so';
     if (Platform.isMacOS) {
-      libraryPath = 'libHDF5.dylib';
+      // Load from xcframework bundled via CocoaPods
+      libraryPath = 'hdf5_modular.framework/hdf5_modular';
     } else if (Platform.isWindows) {
       libraryPath = 'hdf5.dll';
     }

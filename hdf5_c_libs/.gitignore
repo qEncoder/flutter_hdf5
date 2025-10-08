@@ -1,0 +1,6 @@
+# Build artifacts
+*.o
+*.a
+*.dylib
+build/
+.DS_Store

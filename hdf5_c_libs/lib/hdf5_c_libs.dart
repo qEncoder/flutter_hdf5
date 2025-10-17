@@ -1,0 +1,1 @@
+class Hdf5CLibs {}

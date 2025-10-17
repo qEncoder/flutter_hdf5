@@ -1,8 +1,5 @@
 import 'package:hdf5/src/bindings/HDF5_bindings.dart';
 
-import 'dart:ffi';
-import 'package:ffi/ffi.dart';
-
 class SpaceInfo {
   int rank;
   List<int> dim;
@@ -24,7 +21,9 @@ SpaceInfo getSpaceInfo(int spaceId) {
   List<int> dim = [];
   List<int> maxDim = [];
   if (rank > 0) {
-    (dim, maxDim) = HDF5lib.H5S.getSimpleExtentDims(spaceId, rank);
+    final dimensions = HDF5lib.H5S.getSimpleExtentDims(spaceId, rank);
+    dim = dimensions.$1;
+    maxDim = dimensions.$2;
   }
 
   return SpaceInfo(rank, dim, maxDim, spaceId: spaceId);

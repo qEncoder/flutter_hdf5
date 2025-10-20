@@ -266,8 +266,7 @@ void writeData(int datasetId, ndarray data) {
     dataPtr
   );
 
-  // Cleanup
-  HDF5lib.H5S.close(spaceId);
+  // Cleanup - dispose() methods handle closing the HDF5 resources
   spaceInfo.dispose();
   typeInfo.dispose();
 

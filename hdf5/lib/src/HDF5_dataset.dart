@@ -119,6 +119,10 @@ class H5Dataset {
     return readData(datasetId, idx);
   }
 
+  void setData(dynamic data) {
+    writeData(datasetId, data);
+  }
+
   @override
   String toString() {
     return "Dataset :: $name";

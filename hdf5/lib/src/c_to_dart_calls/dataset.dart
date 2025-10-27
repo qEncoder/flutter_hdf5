@@ -234,3 +234,113 @@ ndarray readData(datasetId, dynamic idx, {bool readImaginary = false}) {
     outputDim: outputDim
   );
 }
+
+void writeData(int datasetId, ndarray data) {
+  logger.info("Writing data to dataset $datasetId");
+  HDF5Bindings HDF5lib = HDF5Bindings();
+
+  // Get dataset type information
+  int typeId = HDF5lib.H5D.getType(datasetId);
+  TypeInfo typeInfo = getTypeInfo(typeId);
+
+  // Get dataset space information
+  int spaceId = HDF5lib.H5D.getSpace(datasetId);
+  SpaceInfo spaceInfo = getSpaceInfo(spaceId);
+
+  // Validate data size matches dataset dimensions
+  int expectedSize = 1;
+  for (int dim in spaceInfo.dim) {
+    expectedSize *= dim;
+  }
+
+  if (data.size != expectedSize) {
+    spaceInfo.dispose();
+    typeInfo.dispose();
+    throw Exception(
+      'Data size mismatch: expected $expectedSize elements but got ${data.size} elements'
+    );
+  }
+
+  // Get pointer to Numd array's data based on dtype
+  Pointer dataPtr;
+  int h5TypeId;
+
+  switch (data.dtype) {
+    case DType.float32:
+      if (typeInfo.type != H5T_class_t.FLOAT || typeInfo.size != 4) {
+        spaceInfo.dispose();
+        typeInfo.dispose();
+        throw Exception(
+          'Type mismatch: dataset expects ${typeInfo.type} size ${typeInfo.size}, but got float32'
+        );
+      }
+      dataPtr = data.getDataPointer().cast<Float>();
+      h5TypeId = HDF5lib.H5T.H5T_NATIVE_FLOAT;
+      break;
+
+    case DType.float64:
+      if (typeInfo.type != H5T_class_t.FLOAT || typeInfo.size != 8) {
+        spaceInfo.dispose();
+        typeInfo.dispose();
+        throw Exception(
+          'Type mismatch: dataset expects ${typeInfo.type} size ${typeInfo.size}, but got float64'
+        );
+      }
+      dataPtr = data.getDataPointer().cast<Double>();
+      h5TypeId = HDF5lib.H5T.H5T_NATIVE_DOUBLE;
+      break;
+
+    case DType.int32:
+      if (typeInfo.type != H5T_class_t.INTEGER || typeInfo.size != 4) {
+        spaceInfo.dispose();
+        typeInfo.dispose();
+        throw Exception(
+          'Type mismatch: dataset expects ${typeInfo.type} size ${typeInfo.size}, but got int32'
+        );
+      }
+      dataPtr = data.getDataPointer().cast<Int32>();
+      h5TypeId = HDF5lib.H5T.H5T_NATIVE_INT;
+      break;
+
+    case DType.int64:
+      if (typeInfo.type != H5T_class_t.INTEGER || typeInfo.size != 8) {
+        spaceInfo.dispose();
+        typeInfo.dispose();
+        throw Exception(
+          'Type mismatch: dataset expects ${typeInfo.type} size ${typeInfo.size}, but got int64'
+        );
+      }
+      dataPtr = data.getDataPointer().cast<Int64>();
+      h5TypeId = HDF5lib.H5T.H5T_NATIVE_LLONG;
+      break;
+
+    case DType.complex64:
+    case DType.complex128:
+      spaceInfo.dispose();
+      typeInfo.dispose();
+      throw UnsupportedError(
+        'Zero-copy write for complex types (${data.dtype}) is not yet supported. '
+        'Numd library does not expose data pointers for complex arrays.'
+      );
+  }
+
+  // Write data directly from Numd's memory buffer to HDF5 (ZERO-COPY!)
+  int status = HDF5lib.H5D.write(
+    datasetId,
+    h5TypeId,
+    H5S_ALL,
+    H5S_ALL,
+    H5P_DEFAULT,
+    dataPtr
+  );
+
+  // Cleanup - dispose() methods handle closing the HDF5 resources
+  spaceInfo.dispose();
+  typeInfo.dispose();
+
+  if (status < 0) {
+    throw Exception('Failed to write data to dataset $datasetId (H5Dwrite returned $status)');
+  }
+
+  logger.info("Data written to dataset $datasetId successfully");
+}

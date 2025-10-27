@@ -194,8 +194,9 @@ void print_dataset_info() {
     print("filter :: ${filter.filterType.string}");
     print("comression info :: ${filter.compressionInfo}");
     print("chunk size : ${dataset.getChunkSize()}");
-
   }
+
+  h5file.close();
 }
 
 

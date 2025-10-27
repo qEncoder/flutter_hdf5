@@ -47,6 +47,56 @@ import 'H5T.dart';
 import 'H5O.dart';
 import 'H5R.dart';
 
+DynamicLibrary _loadDynamicLibrary() {
+  // Check if we're in a test environment
+  final isTestEnvironment = Platform.environment.containsKey('FLUTTER_TEST');
+
+  if (Platform.isMacOS) {
+    if (isTestEnvironment) {
+      // In test environment, try multiple possible locations
+      final possiblePaths = [
+        'build/macos/Build/Products/Debug/hdf5_modular.framework/Versions/A/hdf5_modular',
+        'build/macos/Build/Products/Release/hdf5_modular.framework/Versions/A/hdf5_modular',
+        '../hdf5_c_libs/macos/Libraries/hdf5_modular.xcframework/macos-arm64_x86_64/hdf5_modular.framework/Versions/A/hdf5_modular',
+        '../hdf5_c_libs/macos/Libraries/hdf5_modular.xcframework/macos-arm64_x86_64/hdf5_modular.framework/hdf5_modular',
+        '../../hdf5_c_libs/macos/Libraries/hdf5_modular.xcframework/macos-arm64_x86_64/hdf5_modular.framework/Versions/A/hdf5_modular',
+        '../../hdf5_c_libs/macos/Libraries/hdf5_modular.xcframework/macos-arm64_x86_64/hdf5_modular.framework/hdf5_modular',
+      ];
+
+      for (final path in possiblePaths) {
+        try {
+          logger.info("Trying to load HDF5 library from $path");
+          return DynamicLibrary.open(path);
+        } catch (e) {
+          logger.fine("Failed to load from $path: $e");
+          continue;
+        }
+      }
+
+      // If none of the paths worked, throw helpful error
+      throw Exception(
+        'Failed to load HDF5 framework in test environment. Tried paths:\n' +
+        possiblePaths.join('\n') +
+        '\n\nPlease run "flutter build macos" first to build the framework.'
+      );
+    } else {
+      // Production environment - load from framework bundled via CocoaPods
+      final libraryPath = 'hdf5_modular.framework/hdf5_modular';
+      logger.info("Loading HDF5 library from $libraryPath");
+      return DynamicLibrary.open(libraryPath);
+    }
+  } else if (Platform.isWindows) {
+    final libraryPath = 'hdf5.dll';
+    logger.info("Loading HDF5 library from $libraryPath");
+    return DynamicLibrary.open(libraryPath);
+  } else {
+    // Linux and other platforms
+    final libraryPath = 'hdf5.so';
+    logger.info("Loading HDF5 library from $libraryPath");
+    return DynamicLibrary.open(libraryPath);
+  }
+}
+
 class HDF5Bindings {
   static final HDF5Bindings __instance = HDF5Bindings.__new__();
   late final H5Bindings H5;
@@ -66,17 +116,7 @@ class HDF5Bindings {
   }
 
   HDF5Bindings.__new__() {
-    String libraryPath;
-
-    libraryPath = 'hdf5.so';
-    if (Platform.isMacOS) {
-      // Load from xcframework bundled via CocoaPods
-      libraryPath = 'hdf5_modular.framework/hdf5_modular';
-    } else if (Platform.isWindows) {
-      libraryPath = 'hdf5.dll';
-    }
-    logger.info("Loading HDF5 library from $libraryPath");
-    final DynamicLibrary HDF5Lib = DynamicLibrary.open(libraryPath);
+    final DynamicLibrary HDF5Lib = _loadDynamicLibrary();
     logger.info('HDF5 library loaded');
 
     // initialize the library (needed to load the values of the constants)

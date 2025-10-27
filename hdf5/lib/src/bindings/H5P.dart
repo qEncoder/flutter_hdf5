@@ -65,7 +65,7 @@ class FilterSettings{
 
   FilterSettings(int filterTypeRaw, this.__auxFilterValues, this.compressionRatio):
     filterType = H5Z_filter_t.fromIdx(filterTypeRaw);
-  
+
   Map<String, String> get compressionInfo{
     Map<String, String> info = {};
     if (filterType == H5Z_filter_t.DEFLATE){
@@ -73,6 +73,26 @@ class FilterSettings{
     }
     info['Compression ratio'] = compressionRatio.toString();
     return info;
+  }
+}
+
+// Helper function to try loading ROS3 symbol - returns null if not available
+H5Pset_fapl_ros3? _tryLoadRos3Symbol(DynamicLibrary lib) {
+  try {
+    return lib.lookup<NativeFunction<H5Pset_fapl_ros3_c>>('H5Pset_fapl_ros3').asFunction();
+  } catch (e) {
+    logger.info('ROS3 VFD not available - library not compiled with --enable-ros3-vfd');
+    return null;
+  }
+}
+
+// Helper function to try loading ROS3 token symbol - returns null if not available
+H5Pset_fapl_ros3_token? _tryLoadRos3TokenSymbol(DynamicLibrary lib) {
+  try {
+    return lib.lookup<NativeFunction<H5Pset_fapl_ros3_token_c>>('H5Pset_fapl_ros3_token').asFunction();
+  } catch (e) {
+    logger.info('ROS3 token VFD not available - library not compiled with --enable-ros3-vfd');
+    return null;
   }
 }
 
@@ -88,8 +108,8 @@ class H5PBindings {
   final H5Pget_nfilters __getNFilters;
   final H5Pget_filter __getFilter;
 
-  final H5Pset_fapl_ros3 __setFaplRos3;
-  final H5Pset_fapl_ros3_token __setFaplRos3Token;
+  final H5Pset_fapl_ros3? __setFaplRos3;
+  final H5Pset_fapl_ros3_token? __setFaplRos3Token;
 
   final int FILE_CREATE;
   final int FILE_ACCESS;
@@ -117,19 +137,14 @@ class H5PBindings {
         __setChunkCache = HDF5Lib.lookup<NativeFunction<h5pset_chunk_cache_c>>(
                 'H5Pset_chunk_cache')
             .asFunction(),
-        __getNFilters = 
+        __getNFilters =
             HDF5Lib.lookup<NativeFunction<H5Pget_nfilters_c>>('H5Pget_nfilters')
                 .asFunction(),
         __getFilter =
             HDF5Lib.lookup<NativeFunction<H5Pget_filter_c>>('H5Pget_filter2')
                 .asFunction(),
-        __setFaplRos3 = HDF5Lib.lookup<NativeFunction<H5Pset_fapl_ros3_c>>(
-                'H5Pset_fapl_ros3')
-            .asFunction(),
-        __setFaplRos3Token =
-            HDF5Lib.lookup<NativeFunction<H5Pset_fapl_ros3_token_c>>(
-                    'H5Pset_fapl_ros3_token')
-                .asFunction(),
+        __setFaplRos3 = _tryLoadRos3Symbol(HDF5Lib),
+        __setFaplRos3Token = _tryLoadRos3TokenSymbol(HDF5Lib),
         FILE_ACCESS = HDF5Lib.lookup<Int64>('H5P_CLS_FILE_ACCESS_ID_g').value,
         FILE_CREATE = HDF5Lib.lookup<Int64>('H5P_CLS_FILE_CREATE_ID_g').value,
         DATASET_CREATE =
@@ -254,7 +269,12 @@ class H5PBindings {
   }
 
   void setFaplRos3(int fapl_id, Pointer<H5FD_ros3_fapl_t> fa) {
-    final status = __setFaplRos3(fapl_id, fa);
+    if (__setFaplRos3 == null) {
+      throw Exception(
+        "ROS3 VFD not available. HDF5 library must be recompiled with --enable-ros3-vfd flag."
+      );
+    }
+    final status = __setFaplRos3!(fapl_id, fa);
     if (status < 0) {
       logger.severe('Failed to set ROS3 file access property list');
       throw Exception("Failed to set ROS3 file access property list");
@@ -262,7 +282,12 @@ class H5PBindings {
   }
 
   void setFaplRos3Token(int fapl_id, Pointer<Uint8> token) {
-    final status = __setFaplRos3Token(fapl_id, token);
+    if (__setFaplRos3Token == null) {
+      throw Exception(
+        "ROS3 token VFD not available. HDF5 library must be recompiled with --enable-ros3-vfd flag."
+      );
+    }
+    final status = __setFaplRos3Token!(fapl_id, token);
     if (status < 0) {
       logger.severe('Failed to set ROS3 token');
       throw Exception("Failed to set ROS3 token");

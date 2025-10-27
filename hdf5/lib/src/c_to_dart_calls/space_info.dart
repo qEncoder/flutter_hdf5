@@ -12,7 +12,9 @@ class SpaceInfo {
   SpaceInfo(this.rank, this.dim, this.maxDim, {this.spaceId = -1});
 
   void dispose() {
-    if (spaceId > 0) HDF5Bindings().H5S.close(spaceId);
+    if (spaceId > 0) {
+      HDF5Bindings().H5S.close(spaceId);
+    }
   }
 }
 

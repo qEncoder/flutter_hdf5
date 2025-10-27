@@ -157,20 +157,16 @@ packages:
   numd:
     dependency: "direct main"
     description:
-      path: numd
-      ref: dev
-      resolved-ref: "266e53c150a06df6e14da64c14a1b6639bd61c75"
-      url: "https://github.com/qEncoder/numd.git"
-    source: git
+      path: "../../numd/numd"
+      relative: true
+    source: path
     version: "1.0.0+1"
   numd_c_libs:
     dependency: transitive
     description:
-      path: numd_c_libs
-      ref: dev
-      resolved-ref: "266e53c150a06df6e14da64c14a1b6639bd61c75"
-      url: "https://github.com/qEncoder/numd.git"
-    source: git
+      path: "../../numd/numd_c_libs"
+      relative: true
+    source: path
     version: "0.0.1"
   path:
     dependency: transitive

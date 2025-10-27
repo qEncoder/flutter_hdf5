@@ -22,98 +22,190 @@ ndarray readData(datasetId, dynamic idx, {bool readImaginary = false}) {
   ({int memSpaceId, int fileSpaceId, List<int> outputDim}) space =
       hypersliceData(spaceInfo, idx);
 
-  ndarray dataOut = ndarray.fromShape([1]);
-  if (space.outputDim.isNotEmpty) dataOut = ndarray.fromShape(space.outputDim);
-
-  int size = typeInfo.size * dataOut.size;
-
-  Pointer<Int8> data = calloc<Int8>(size);
-  HDF5lib.H5D.read(datasetId, typeInfo.nativeTypeId, space.memSpaceId,
-      space.fileSpaceId, H5P_DEFAULT, data);
-
-  // note that due some limitations in numd, a conversion must be performed to double
-  switch (typeInfo.type){
-    case H5T_class_t.FLOAT:
-      switch (typeInfo.size){
-        case 4:
-          Pointer<Float> dataPointer = data.cast<Float>();
-          for (var i = 0; i < dataOut.size; i++) {
-            dataOut.flat[i] = dataPointer[i];
-          }
-          break;
-        case 8:
-          Pointer<Double> dataPointer = data.cast<Double>();
-          for (var i = 0; i < dataOut.size; i++) {
-            dataOut.flat[i] = dataPointer[i];
-          }
-          break;
-        default:
-          throw "Only 32 and 64 bit types are supported.";
-      }
-    case H5T_class_t.INTEGER:
-      switch (typeInfo.size){
-        case 4:
-          Pointer<Int32> dataPointer = data.cast<Int32>();
-          for (var i = 0; i < dataOut.size; i++) {
-            int value = dataPointer[i];
-            dataOut.flat[i] = value.toDouble();
-          }
-          break;
-        case 8:
-          Pointer<Int64> dataPointer = data.cast<Int64>();
-          for (var i = 0; i < dataOut.size; i++) {
-            int value = dataPointer[i];
-            dataOut.flat[i] = value.toDouble();
-          }
-          break;
-        default:
-          throw "Only 32 and 64 bit types are supported.";
-      }
-    case H5T_class_t.COMPOUND:
-      // assume usage for imaginary numbers
-      int nMembers = HDF5lib.H5T.getNMembers(typeInfo.nativeTypeId);
-      List<CompoundMemberInfo> compoundMemberInfo = [];
-
-      for (int i = 0; i < nMembers; i++) {
-        String memberName = HDF5lib.H5T.getMemberName(typeInfo.nativeTypeId, i);
-
-        int memberType = HDF5lib.H5T.getMemberType(typeInfo.nativeTypeId, i);
-        TypeInfo memberTypeInfo = getTypeInfo(memberType);
-
-        int offset = HDF5lib.H5T.getMemberOffset(typeInfo.nativeTypeId, i);
-
-        compoundMemberInfo.add(CompoundMemberInfo(
-            memberName, SpaceInfo(0, [], []), memberTypeInfo, offset));
-      }
-      if (compoundMemberInfo.length == 2){
-        if (compoundMemberInfo[0].typeInfo.size == 8 &&
-            compoundMemberInfo[1].typeInfo.size == 8 &&
-            compoundMemberInfo[0].typeInfo.type == H5T_class_t.FLOAT &&
-            compoundMemberInfo[1].typeInfo.type == H5T_class_t.FLOAT) {
-          Pointer<Double> dataPointer = data.cast<Double>();
-          for (var i = 0, j = 0; i < dataOut.size; i++, j += 2) {
-            dataOut.flat[i] = readImaginary ? dataPointer[j + 1] : dataPointer[j];
-          }
-        } else {
-          throw "Only 32 bit float types are supported.";
-        }
-      } else {
-        throw "Only complex numbers are supported.";
-      }
-      
-    default:
-      throw "Only integer and float types are supported.";
-
+  // Handle complex numbers separately (they require special unpacking from COMPOUND types)
+  if (typeInfo.type == H5T_class_t.COMPOUND) {
+    return _readComplexData(
+      datasetId,
+      space,
+      typeInfo,
+      spaceInfo,
+      readImaginary
+    );
   }
 
+  // Determine Numd dtype and HDF5 native type from dataset type
+  DType dtype;
+  int h5TypeId;
+
+  switch (typeInfo.type) {
+    case H5T_class_t.FLOAT:
+      if (typeInfo.size == 4) {
+        dtype = DType.float32;
+        h5TypeId = HDF5lib.H5T.H5T_NATIVE_FLOAT;
+      } else if (typeInfo.size == 8) {
+        dtype = DType.float64;
+        h5TypeId = HDF5lib.H5T.H5T_NATIVE_DOUBLE;
+      } else {
+        spaceInfo.dispose();
+        typeInfo.dispose();
+        HDF5lib.H5S.close(space.memSpaceId);
+        HDF5lib.H5S.close(space.fileSpaceId);
+        throw Exception("Only 32 and 64 bit float types are supported.");
+      }
+      break;
+
+    case H5T_class_t.INTEGER:
+      if (typeInfo.size == 4) {
+        dtype = DType.int32;
+        h5TypeId = HDF5lib.H5T.H5T_NATIVE_INT;
+      } else if (typeInfo.size == 8) {
+        dtype = DType.int64;
+        h5TypeId = HDF5lib.H5T.H5T_NATIVE_LLONG;
+      } else {
+        spaceInfo.dispose();
+        typeInfo.dispose();
+        HDF5lib.H5S.close(space.memSpaceId);
+        HDF5lib.H5S.close(space.fileSpaceId);
+        throw Exception("Only 32 and 64 bit integer types are supported.");
+      }
+      break;
+
+    default:
+      spaceInfo.dispose();
+      typeInfo.dispose();
+      HDF5lib.H5S.close(space.memSpaceId);
+      HDF5lib.H5S.close(space.fileSpaceId);
+      throw Exception("Only integer and float types are supported.");
+  }
+
+  // Create Numd array with correct type and shape (allocates memory)
+  ndarray dataOut;
+  if (space.outputDim.isEmpty) {
+    dataOut = ndarray.fromShape([1], dtype: dtype);
+  } else {
+    dataOut = ndarray.fromShape(space.outputDim, dtype: dtype);
+  }
+
+  // Get pointer to Numd's internal memory
+  Pointer dataPtr;
+  switch (dtype) {
+    case DType.float32:
+      dataPtr = dataOut.getDataPointer().cast<Float>();
+      break;
+    case DType.float64:
+      dataPtr = dataOut.getDataPointer().cast<Double>();
+      break;
+    case DType.int32:
+      dataPtr = dataOut.getDataPointer().cast<Int32>();
+      break;
+    case DType.int64:
+      dataPtr = dataOut.getDataPointer().cast<Int64>();
+      break;
+    default:
+      // Should never reach here due to earlier validation
+      spaceInfo.dispose();
+      typeInfo.dispose();
+      HDF5lib.H5S.close(space.memSpaceId);
+      HDF5lib.H5S.close(space.fileSpaceId);
+      throw Exception("Unsupported dtype: $dtype");
+  }
+
+  // HDF5 reads DIRECTLY into Numd's memory - TRUE ZERO-COPY!
+  HDF5lib.H5D.read(
+    datasetId,
+    h5TypeId,
+    space.memSpaceId,
+    space.fileSpaceId,
+    H5P_DEFAULT,
+    dataPtr
+  );
+
+  // Cleanup
   HDF5lib.H5S.close(space.memSpaceId);
   HDF5lib.H5S.close(space.fileSpaceId);
-
   spaceInfo.dispose();
   typeInfo.dispose();
 
-  calloc.free(data);
-  logger.info("Data read from dataset $datasetId successfully");
+  logger.info("Data read from dataset $datasetId successfully (zero-copy)");
+  return dataOut;
+}
+
+// Helper function for reading complex numbers from HDF5 COMPOUND types
+ndarray _readComplexData(
+  int datasetId,
+  ({int memSpaceId, int fileSpaceId, List<int> outputDim}) space,
+  TypeInfo typeInfo,
+  SpaceInfo spaceInfo,
+  bool readImaginary
+) {
+  HDF5Bindings HDF5lib = HDF5Bindings();
+
+  // Create output array (default float64 for complex data)
+  ndarray dataOut = ndarray.fromShape([1]);
+  if (space.outputDim.isNotEmpty) {
+    dataOut = ndarray.fromShape(space.outputDim);
+  }
+
+  int size = typeInfo.size * dataOut.size;
+
+  // Allocate buffer for reading compound data
+  Pointer<Int8> data = calloc<Int8>(size);
+
+  try {
+    // Read compound data from HDF5
+    HDF5lib.H5D.read(
+      datasetId,
+      typeInfo.nativeTypeId,
+      space.memSpaceId,
+      space.fileSpaceId,
+      H5P_DEFAULT,
+      data
+    );
+
+    // Parse compound type members
+    int nMembers = HDF5lib.H5T.getNMembers(typeInfo.nativeTypeId);
+    List<CompoundMemberInfo> compoundMemberInfo = [];
+
+    for (int i = 0; i < nMembers; i++) {
+      String memberName = HDF5lib.H5T.getMemberName(typeInfo.nativeTypeId, i);
+      int memberType = HDF5lib.H5T.getMemberType(typeInfo.nativeTypeId, i);
+      TypeInfo memberTypeInfo = getTypeInfo(memberType);
+      int offset = HDF5lib.H5T.getMemberOffset(typeInfo.nativeTypeId, i);
+
+      compoundMemberInfo.add(CompoundMemberInfo(
+        memberName,
+        SpaceInfo(0, [], []),
+        memberTypeInfo,
+        offset
+      ));
+    }
+
+    // Validate and unpack complex numbers (2 float members)
+    if (compoundMemberInfo.length == 2) {
+      if (compoundMemberInfo[0].typeInfo.size == 8 &&
+          compoundMemberInfo[1].typeInfo.size == 8 &&
+          compoundMemberInfo[0].typeInfo.type == H5T_class_t.FLOAT &&
+          compoundMemberInfo[1].typeInfo.type == H5T_class_t.FLOAT) {
+        Pointer<Double> dataPointer = data.cast<Double>();
+        for (var i = 0, j = 0; i < dataOut.size; i++, j += 2) {
+          dataOut.flat[i] = readImaginary ? dataPointer[j + 1] : dataPointer[j];
+        }
+      } else {
+        throw Exception("Only double precision float complex types are supported.");
+      }
+    } else {
+      throw Exception("Only complex numbers (2-member compounds) are supported.");
+    }
+  } finally {
+    // Cleanup
+    calloc.free(data);
+    HDF5lib.H5S.close(space.memSpaceId);
+    HDF5lib.H5S.close(space.fileSpaceId);
+    spaceInfo.dispose();
+    typeInfo.dispose();
+  }
+
+  logger.info("Complex data read from dataset $datasetId successfully");
   return dataOut;
 }
 

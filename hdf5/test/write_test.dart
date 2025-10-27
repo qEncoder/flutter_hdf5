@@ -68,7 +68,7 @@ void main() {
       file2.close();
 
       // Verify the data matches
-      expect(readData.dtype, nd.DType.float64); // HDF5 reads as float64
+      expect(readData.dtype, nd.DType.int32); // Zero-copy preserves original type
       expect(readData.size, 5);
       for (int i = 0; i < 5; i++) {
         expect(readData.flat[i].round(), writeData.flat[i].round(),

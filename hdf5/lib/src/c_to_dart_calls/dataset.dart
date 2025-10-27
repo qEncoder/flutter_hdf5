@@ -182,16 +182,27 @@ ndarray _readComplexData(
 
     // Validate and unpack complex numbers (2 float members)
     if (compoundMemberInfo.length == 2) {
-      if (compoundMemberInfo[0].typeInfo.size == 8 &&
-          compoundMemberInfo[1].typeInfo.size == 8 &&
-          compoundMemberInfo[0].typeInfo.type == H5T_class_t.FLOAT &&
+      if (compoundMemberInfo[0].typeInfo.type == H5T_class_t.FLOAT &&
           compoundMemberInfo[1].typeInfo.type == H5T_class_t.FLOAT) {
-        Pointer<Double> dataPointer = data.cast<Double>();
-        for (var i = 0, j = 0; i < dataOut.size; i++, j += 2) {
-          dataOut.flat[i] = readImaginary ? dataPointer[j + 1] : dataPointer[j];
+
+        // Handle both complex64 (size 4) and complex128 (size 8)
+        if (compoundMemberInfo[0].typeInfo.size == 4 && compoundMemberInfo[1].typeInfo.size == 4) {
+          // Complex64 - single precision
+          Pointer<Float> dataPointer = data.cast<Float>();
+          for (var i = 0, j = 0; i < dataOut.size; i++, j += 2) {
+            dataOut.flat[i] = readImaginary ? dataPointer[j + 1] : dataPointer[j];
+          }
+        } else if (compoundMemberInfo[0].typeInfo.size == 8 && compoundMemberInfo[1].typeInfo.size == 8) {
+          // Complex128 - double precision
+          Pointer<Double> dataPointer = data.cast<Double>();
+          for (var i = 0, j = 0; i < dataOut.size; i++, j += 2) {
+            dataOut.flat[i] = readImaginary ? dataPointer[j + 1] : dataPointer[j];
+          }
+        } else {
+          throw Exception("Only float32 (complex64) and float64 (complex128) complex types are supported.");
         }
       } else {
-        throw Exception("Only double precision float complex types are supported.");
+        throw Exception("Complex type members must be floats.");
       }
     } else {
       throw Exception("Only complex numbers (2-member compounds) are supported.");

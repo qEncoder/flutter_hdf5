@@ -171,6 +171,7 @@ void main() {
   test('Complex number read test (complex128) - with actual HDF5 data', () {
     // Using pre-generated HDF5 file with real complex128 data
     // File contains: [1+2j, 3+4j, 5+6j]
+    // Note: After removing readImaginary parameter, only real parts are accessible
     final testFile = 'test/temp_test_data/complex128_1d.h5';
 
     if (!File(testFile).existsSync()) {
@@ -179,41 +180,24 @@ void main() {
     }
 
     try {
-      // Expected values from the pre-generated file
+      // Expected real parts from the pre-generated file
       final expectedReal = [1.0, 3.0, 5.0];
-      final expectedImag = [2.0, 4.0, 6.0];
 
-      // Read real parts
-      final readFileReal = H5File.open(testFile);
-      final datasetReal = readFileReal.openDataset('complex_data');
-      final readReal = datasetReal.getData(readImaginary: false);
+      // Read complex data (returns real parts only)
+      final readFile = H5File.open(testFile);
+      final dataset = readFile.openDataset('complex_data');
+      final readData = dataset.getData();
 
       // Verify real parts
-      expect(readReal, isA<nd.ndarray>());
-      expect(readReal.size, expectedReal.length);
+      expect(readData, isA<nd.ndarray>());
+      expect(readData.size, expectedReal.length);
 
       for (int i = 0; i < expectedReal.length; i++) {
-        expect((readReal.flat[i] - expectedReal[i]).abs(), lessThan(1e-10),
-            reason: 'Real part element $i: expected ${expectedReal[i]}, got ${readReal.flat[i]}');
+        expect((readData.flat[i] - expectedReal[i]).abs(), lessThan(1e-10),
+            reason: 'Real part element $i: expected ${expectedReal[i]}, got ${readData.flat[i]}');
       }
 
-      readFileReal.close();
-
-      // Read imaginary parts
-      final readFileImag = H5File.open(testFile);
-      final datasetImag = readFileImag.openDataset('complex_data');
-      final readImag = datasetImag.getData(readImaginary: true);
-
-      // Verify imaginary parts
-      expect(readImag, isA<nd.ndarray>());
-      expect(readImag.size, expectedImag.length);
-
-      for (int i = 0; i < expectedImag.length; i++) {
-        expect((readImag.flat[i] - expectedImag[i]).abs(), lessThan(1e-10),
-            reason: 'Imaginary part element $i: expected ${expectedImag[i]}, got ${readImag.flat[i]}');
-      }
-
-      readFileImag.close();
+      readFile.close();
     } catch (e) {
       print('✗ Complex128 test failed: $e');
       rethrow;
@@ -223,6 +207,7 @@ void main() {
   test('Complex number read test (complex64) - with actual HDF5 data', () {
     // Using pre-generated HDF5 file with real complex64 data
     // File contains: [1+2j, 3+4j, 5+6j]
+    // Note: After removing readImaginary parameter, only real parts are accessible
     final testFile = 'test/temp_test_data/complex64_1d.h5';
 
     if (!File(testFile).existsSync()) {
@@ -231,41 +216,24 @@ void main() {
     }
 
     try {
-      // Expected values from the pre-generated file
+      // Expected real parts from the pre-generated file
       final expectedReal = [1.0, 3.0, 5.0];
-      final expectedImag = [2.0, 4.0, 6.0];
 
-      // Read real parts
-      final readFileReal = H5File.open(testFile);
-      final datasetReal = readFileReal.openDataset('complex_data');
-      final readReal = datasetReal.getData(readImaginary: false);
+      // Read complex data (returns real parts only)
+      final readFile = H5File.open(testFile);
+      final dataset = readFile.openDataset('complex_data');
+      final readData = dataset.getData();
 
       // Verify real parts (float32 precision)
-      expect(readReal, isA<nd.ndarray>());
-      expect(readReal.size, expectedReal.length);
+      expect(readData, isA<nd.ndarray>());
+      expect(readData.size, expectedReal.length);
 
       for (int i = 0; i < expectedReal.length; i++) {
-        expect((readReal.flat[i] - expectedReal[i]).abs(), lessThan(1e-5),
-            reason: 'Real part element $i: expected ${expectedReal[i]}, got ${readReal.flat[i]}');
+        expect((readData.flat[i] - expectedReal[i]).abs(), lessThan(1e-5),
+            reason: 'Real part element $i: expected ${expectedReal[i]}, got ${readData.flat[i]}');
       }
 
-      readFileReal.close();
-
-      // Read imaginary parts
-      final readFileImag = H5File.open(testFile);
-      final datasetImag = readFileImag.openDataset('complex_data');
-      final readImag = datasetImag.getData(readImaginary: true);
-
-      // Verify imaginary parts (float32 precision)
-      expect(readImag, isA<nd.ndarray>());
-      expect(readImag.size, expectedImag.length);
-
-      for (int i = 0; i < expectedImag.length; i++) {
-        expect((readImag.flat[i] - expectedImag[i]).abs(), lessThan(1e-5),
-            reason: 'Imaginary part element $i: expected ${expectedImag[i]}, got ${readImag.flat[i]}');
-      }
-
-      readFileImag.close();
+      readFile.close();
     } catch (e) {
       print('✗ Complex64 test failed: $e');
       rethrow;

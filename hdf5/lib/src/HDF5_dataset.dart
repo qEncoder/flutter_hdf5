@@ -107,12 +107,12 @@ class H5Dataset {
     return chunkSize;
   }
 
-  dynamic getData({readImaginary = false}) {
-    return readData(datasetId, [], readImaginary: readImaginary);
+  dynamic getData() {
+    return readData(datasetId, []);
   }
 
-  dynamic getSlices(List slices, {readImaginary = false}) {
-    return readData(datasetId, slices, readImaginary: readImaginary);
+  dynamic getSlices(List slices) {
+    return readData(datasetId, slices);
   }
   
   dynamic operator [](dynamic idx) {

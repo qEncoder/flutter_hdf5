@@ -10,7 +10,7 @@ import 'package:numd/numd.dart';
 import 'dart:ffi';
 import 'package:ffi/ffi.dart';
 
-ndarray readData(datasetId, dynamic idx, {bool readImaginary = false}) {
+ndarray readData(datasetId, dynamic idx) {
   logger.info("Reading data from dataset $datasetId");
   HDF5Bindings HDF5lib = HDF5Bindings();
 
@@ -29,8 +29,7 @@ ndarray readData(datasetId, dynamic idx, {bool readImaginary = false}) {
       datasetId,
       space,
       typeInfo,
-      spaceInfo,
-      readImaginary
+      spaceInfo
     );
   }
 
@@ -136,8 +135,7 @@ ndarray _readComplexData(
   int datasetId,
   ({int memSpaceId, int fileSpaceId, List<int> outputDim}) space,
   TypeInfo typeInfo,
-  SpaceInfo spaceInfo,
-  bool readImaginary
+  SpaceInfo spaceInfo
 ) {
   HDF5Bindings HDF5lib = HDF5Bindings();
 
@@ -187,17 +185,18 @@ ndarray _readComplexData(
           compoundMemberInfo[1].typeInfo.type == H5T_class_t.FLOAT) {
 
         // Handle both complex64 (size 4) and complex128 (size 8)
+        // Note: Always returns real parts only (imaginary parts not accessible without readImaginary parameter)
         if (compoundMemberInfo[0].typeInfo.size == 4 && compoundMemberInfo[1].typeInfo.size == 4) {
-          // Complex64 - single precision
+          // Complex64 - single precision - read real parts only
           Pointer<Float> dataPointer = data.cast<Float>();
           for (var i = 0, j = 0; i < dataOut.size; i++, j += 2) {
-            dataOut.flat[i] = readImaginary ? dataPointer[j + 1] : dataPointer[j];
+            dataOut.flat[i] = dataPointer[j];  // Real part only
           }
         } else if (compoundMemberInfo[0].typeInfo.size == 8 && compoundMemberInfo[1].typeInfo.size == 8) {
-          // Complex128 - double precision
+          // Complex128 - double precision - read real parts only
           Pointer<Double> dataPointer = data.cast<Double>();
           for (var i = 0, j = 0; i < dataOut.size; i++, j += 2) {
-            dataOut.flat[i] = readImaginary ? dataPointer[j + 1] : dataPointer[j];
+            dataOut.flat[i] = dataPointer[j];  // Real part only
           }
         } else {
           throw Exception("Only float32 (complex64) and float64 (complex128) complex types are supported.");

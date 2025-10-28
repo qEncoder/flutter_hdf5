@@ -139,84 +139,106 @@ ndarray _readComplexData(
 ) {
   HDF5Bindings HDF5lib = HDF5Bindings();
 
-  // Create output array (default float64 for complex data)
-  ndarray dataOut = ndarray.fromShape([1]);
-  if (space.outputDim.isNotEmpty) {
-    dataOut = ndarray.fromShape(space.outputDim);
+  // Parse compound type members to determine complex precision
+  int nMembers = HDF5lib.H5T.getNMembers(typeInfo.nativeTypeId);
+
+  if (nMembers != 2) {
+    HDF5lib.H5S.close(space.memSpaceId);
+    HDF5lib.H5S.close(space.fileSpaceId);
+    spaceInfo.dispose();
+    typeInfo.dispose();
+    throw Exception("Only complex numbers (2-member compounds) are supported. Found $nMembers members.");
   }
 
-  int size = typeInfo.size * dataOut.size;
+  List<CompoundMemberInfo> compoundMemberInfo = [];
+  for (int i = 0; i < nMembers; i++) {
+    String memberName = HDF5lib.H5T.getMemberName(typeInfo.nativeTypeId, i);
+    int memberType = HDF5lib.H5T.getMemberType(typeInfo.nativeTypeId, i);
+    TypeInfo memberTypeInfo = getTypeInfo(memberType);
+    int offset = HDF5lib.H5T.getMemberOffset(typeInfo.nativeTypeId, i);
 
-  // Allocate buffer for reading compound data
-  Pointer<Int8> data = calloc<Int8>(size);
+    compoundMemberInfo.add(CompoundMemberInfo(
+      memberName,
+      SpaceInfo(0, [], []),
+      memberTypeInfo,
+      offset
+    ));
+  }
+
+  // Validate complex type
+  if (compoundMemberInfo[0].typeInfo.type != H5T_class_t.FLOAT ||
+      compoundMemberInfo[1].typeInfo.type != H5T_class_t.FLOAT) {
+    HDF5lib.H5S.close(space.memSpaceId);
+    HDF5lib.H5S.close(space.fileSpaceId);
+    spaceInfo.dispose();
+    typeInfo.dispose();
+    throw Exception("Complex type members must be floats.");
+  }
+
+  // Determine complex dtype based on precision
+  DType complexDtype;
+  if (compoundMemberInfo[0].typeInfo.size == 4 && compoundMemberInfo[1].typeInfo.size == 4) {
+    complexDtype = DType.complex64;
+  } else if (compoundMemberInfo[0].typeInfo.size == 8 && compoundMemberInfo[1].typeInfo.size == 8) {
+    complexDtype = DType.complex128;
+  } else {
+    HDF5lib.H5S.close(space.memSpaceId);
+    HDF5lib.H5S.close(space.fileSpaceId);
+    spaceInfo.dispose();
+    typeInfo.dispose();
+    throw Exception("Only float32 (complex64) and float64 (complex128) complex types are supported.");
+  }
+
+  // Create complex array with correct dtype and shape
+  ndarray dataOut;
+  if (space.outputDim.isEmpty) {
+    dataOut = ndarray.fromShape([1], dtype: complexDtype);
+  } else {
+    dataOut = ndarray.fromShape(space.outputDim, dtype: complexDtype);
+  }
+
+  int bufferSize = typeInfo.size * dataOut.size;
+  Pointer<Int8> buffer = calloc<Int8>(bufferSize);
 
   try {
-    // Read compound data from HDF5
+    // Read compound data from HDF5 into buffer
     HDF5lib.H5D.read(
       datasetId,
       typeInfo.nativeTypeId,
       space.memSpaceId,
       space.fileSpaceId,
       H5P_DEFAULT,
-      data
+      buffer
     );
 
-    // Parse compound type members
-    int nMembers = HDF5lib.H5T.getNMembers(typeInfo.nativeTypeId);
-    List<CompoundMemberInfo> compoundMemberInfo = [];
-
-    for (int i = 0; i < nMembers; i++) {
-      String memberName = HDF5lib.H5T.getMemberName(typeInfo.nativeTypeId, i);
-      int memberType = HDF5lib.H5T.getMemberType(typeInfo.nativeTypeId, i);
-      TypeInfo memberTypeInfo = getTypeInfo(memberType);
-      int offset = HDF5lib.H5T.getMemberOffset(typeInfo.nativeTypeId, i);
-
-      compoundMemberInfo.add(CompoundMemberInfo(
-        memberName,
-        SpaceInfo(0, [], []),
-        memberTypeInfo,
-        offset
-      ));
-    }
-
-    // Validate and unpack complex numbers (2 float members)
-    if (compoundMemberInfo.length == 2) {
-      if (compoundMemberInfo[0].typeInfo.type == H5T_class_t.FLOAT &&
-          compoundMemberInfo[1].typeInfo.type == H5T_class_t.FLOAT) {
-
-        // Handle both complex64 (size 4) and complex128 (size 8)
-        // Note: Always returns real parts only (imaginary parts not accessible without readImaginary parameter)
-        if (compoundMemberInfo[0].typeInfo.size == 4 && compoundMemberInfo[1].typeInfo.size == 4) {
-          // Complex64 - single precision - read real parts only
-          Pointer<Float> dataPointer = data.cast<Float>();
-          for (var i = 0, j = 0; i < dataOut.size; i++, j += 2) {
-            dataOut.flat[i] = dataPointer[j];  // Real part only
-          }
-        } else if (compoundMemberInfo[0].typeInfo.size == 8 && compoundMemberInfo[1].typeInfo.size == 8) {
-          // Complex128 - double precision - read real parts only
-          Pointer<Double> dataPointer = data.cast<Double>();
-          for (var i = 0, j = 0; i < dataOut.size; i++, j += 2) {
-            dataOut.flat[i] = dataPointer[j];  // Real part only
-          }
-        } else {
-          throw Exception("Only float32 (complex64) and float64 (complex128) complex types are supported.");
-        }
-      } else {
-        throw Exception("Complex type members must be floats.");
+    // Copy interleaved complex data into Numd complex array
+    // HDF5 compound stores as [real1, imag1, real2, imag2, ...]
+    // Numd complex arrays store the same way - we can copy directly
+    if (complexDtype == DType.complex64) {
+      Pointer<Float> srcPtr = buffer.cast<Float>();
+      Pointer<Float> dstPtr = dataOut.getDataPointer().cast<Float>();
+      int count = dataOut.size * 2;  // 2 floats per complex number
+      for (int i = 0; i < count; i++) {
+        dstPtr[i] = srcPtr[i];
       }
     } else {
-      throw Exception("Only complex numbers (2-member compounds) are supported.");
+      Pointer<Double> srcPtr = buffer.cast<Double>();
+      Pointer<Double> dstPtr = dataOut.getDataPointer().cast<Double>();
+      int count = dataOut.size * 2;  // 2 doubles per complex number
+      for (int i = 0; i < count; i++) {
+        dstPtr[i] = srcPtr[i];
+      }
     }
   } finally {
     // Cleanup
-    calloc.free(data);
+    calloc.free(buffer);
     HDF5lib.H5S.close(space.memSpaceId);
     HDF5lib.H5S.close(space.fileSpaceId);
     spaceInfo.dispose();
     typeInfo.dispose();
   }
 
-  logger.info("Complex data read from dataset $datasetId successfully");
+  logger.info("Complex data read from dataset $datasetId successfully (dtype: $complexDtype)");
   return dataOut;
 }
 

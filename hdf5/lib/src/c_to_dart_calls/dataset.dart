@@ -189,7 +189,8 @@ ndarray _readComplexData(
     throw Exception("Only float32 (complex64) and float64 (complex128) complex types are supported.");
   }
 
-  // Create complex array with correct dtype and shape
+  // Boss's proposed solution implementation:
+  // 1. Use ndarray.fromShape() to allocate Numd array first
   ndarray dataOut;
   if (space.outputDim.isEmpty) {
     dataOut = ndarray.fromShape([1], dtype: complexDtype);
@@ -197,48 +198,28 @@ ndarray _readComplexData(
     dataOut = ndarray.fromShape(space.outputDim, dtype: complexDtype);
   }
 
-  int bufferSize = typeInfo.size * dataOut.size;
-  Pointer<Int8> buffer = calloc<Int8>(bufferSize);
+  // 2. Use getDataPointer() to get pointer to Numd's memory
+  Pointer dataPtr = dataOut.getDataPointer();
 
-  try {
-    // Read compound data from HDF5 into buffer
-    HDF5lib.H5D.read(
-      datasetId,
-      typeInfo.nativeTypeId,
-      space.memSpaceId,
-      space.fileSpaceId,
-      H5P_DEFAULT,
-      buffer
-    );
+  // 3. Have HDF5 read directly into that pointer (TRUE ZERO-COPY!)
+  // HDF5 compound stores as [real1, imag1, real2, imag2, ...]
+  // Numd complex arrays store the same way - perfect match!
+  HDF5lib.H5D.read(
+    datasetId,
+    typeInfo.nativeTypeId,
+    space.memSpaceId,
+    space.fileSpaceId,
+    H5P_DEFAULT,
+    dataPtr
+  );
 
-    // Copy interleaved complex data into Numd complex array
-    // HDF5 compound stores as [real1, imag1, real2, imag2, ...]
-    // Numd complex arrays store the same way - we can copy directly
-    if (complexDtype == DType.complex64) {
-      Pointer<Float> srcPtr = buffer.cast<Float>();
-      Pointer<Float> dstPtr = dataOut.getDataPointer().cast<Float>();
-      int count = dataOut.size * 2;  // 2 floats per complex number
-      for (int i = 0; i < count; i++) {
-        dstPtr[i] = srcPtr[i];
-      }
-    } else {
-      Pointer<Double> srcPtr = buffer.cast<Double>();
-      Pointer<Double> dstPtr = dataOut.getDataPointer().cast<Double>();
-      int count = dataOut.size * 2;  // 2 doubles per complex number
-      for (int i = 0; i < count; i++) {
-        dstPtr[i] = srcPtr[i];
-      }
-    }
-  } finally {
-    // Cleanup
-    calloc.free(buffer);
-    HDF5lib.H5S.close(space.memSpaceId);
-    HDF5lib.H5S.close(space.fileSpaceId);
-    spaceInfo.dispose();
-    typeInfo.dispose();
-  }
+  // Cleanup
+  HDF5lib.H5S.close(space.memSpaceId);
+  HDF5lib.H5S.close(space.fileSpaceId);
+  spaceInfo.dispose();
+  typeInfo.dispose();
 
-  logger.info("Complex data read from dataset $datasetId successfully (dtype: $complexDtype)");
+  logger.info("Complex data read from dataset $datasetId successfully (true zero-copy, dtype: $complexDtype)");
   return dataOut;
 }
 

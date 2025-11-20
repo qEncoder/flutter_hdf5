@@ -291,18 +291,32 @@ void main() {
   });
 
   test('Boundary case: Empty dataset (known Numd limitation)', () {
-    // Note: This test documents that empty arrays are NOT supported
-    // This is a known limitation in the Numd library
+    // ⚠️ LIMITATION: Empty datasets are valid in HDF5 but NOT currently supported
+    //
+    // Root Cause: Numd's fromList() and fromShape() methods in ndarray.dart
+    //   - fromList: __getListOfListSize() tries to access mylist[0] on empty list (line 123)
+    //   - fromShape: Validation rejects shape dimensions <= 0 (lines 88-90)
+    //
+    // Backend Support: xtensor (C++ backend) DOES support empty arrays natively
+    //   - Can create: xt::xarray<double>::from_shape({0})
+    //   - Reference: https://xtensor.readthedocs.io/en/latest/quickref/builder.html
+    //
+    // Required Fix (in Numd library):
+    //   1. Update fromShape() to accept zero-size dimensions
+    //   2. Update __getListOfListSize() to handle empty lists without accessing [0]
+    //   3. Ensure xtensor backend properly handles zero-size allocations
+    //
+    // Impact: Users cannot read HDF5 datasets with shape (0,) or any zero dimension
 
     try {
-      // Attempt to create empty array - should fail
+      // Attempt to create empty array - currently fails with RangeError
       expect(
         () => nd.ndarray.fromList([], dtype: nd.DType.float64),
         throwsA(isA<RangeError>()),
-        reason: 'Numd does not support empty arrays - this is expected'
+        reason: 'Numd validation rejects empty arrays - see test comments for fix requirements'
       );
     } catch (e) {
-      // Expected to fail
+      // Expected to fail until Numd library is updated
     }
   });
 

@@ -1,8 +1,12 @@
 import 'package:hdf5/src/HDF5_dataset.dart';
 import 'package:hdf5/src/HDF5_group.dart';
+import 'package:hdf5/src/bindings/H5F.dart';
 import 'package:hdf5/src/bindings/H5FD.dart';
 import 'package:hdf5/src/bindings/HDF5_bindings.dart';
 import 'package:hdf5/src/c_to_dart_calls/utility.dart';
+import 'package:hdf5/src/c_to_dart_calls/dataset.dart' as dataset_ops;
+
+import 'package:numd/numd.dart' as nd;
 
 import 'dart:ffi';
 import 'package:ffi/ffi.dart';
@@ -20,6 +24,10 @@ class H5File {
   H5File.open(this.fileName)
       : __fileId =
             HDF5Bindings().H5F.open(fileName, H5F_ACC_SWMR_READ, H5P_DEFAULT);
+
+  H5File.create(this.fileName, {int flags = H5F_ACC_TRUNC})
+      : __fileId =
+            HDF5Bindings().H5F.create(fileName, flags, H5P_DEFAULT, H5P_DEFAULT);
 
   H5File.openROS3(
       String url, String aws_region, String secret_id, String secret_key,
@@ -70,5 +78,48 @@ class H5File {
 
   H5Dataset openDataset(String name) {
     return H5Dataset(this, name);
+  }
+
+  H5Dataset createDataset(String name, nd.ndarray data) {
+    HDF5Bindings b = HDF5Bindings();
+
+    // Convert numd dtype to HDF5 type
+    int h5Type;
+    switch (data.dtype) {
+      case nd.DType.float32:
+        h5Type = b.H5T.H5T_NATIVE_FLOAT;
+        break;
+      case nd.DType.float64:
+        h5Type = b.H5T.H5T_NATIVE_DOUBLE;
+        break;
+      case nd.DType.int32:
+        h5Type = b.H5T.H5T_NATIVE_INT;
+        break;
+      case nd.DType.int64:
+        h5Type = b.H5T.H5T_NATIVE_LLONG;
+        break;
+      default:
+        throw Exception("Unsupported dtype for HDF5: ${data.dtype}");
+    }
+
+    // Create dataspace from shape
+    int spaceId = b.H5S.createSimple(data.shape);
+
+    // Create dataset
+    Pointer<Uint8> namePtr = strToChar(name);
+    int datasetId = b.H5D.create(
+        fileId, namePtr, h5Type, spaceId, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+    calloc.free(namePtr);
+
+    // Write data using zero-copy
+    dataset_ops.writeData(datasetId, data);
+
+    // Close dataspace
+    b.H5S.close(spaceId);
+
+    // Return H5Dataset object
+    H5Dataset dataset = H5Dataset(this, name);
+    children.add(dataset);
+    return dataset;
   }
 }

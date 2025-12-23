@@ -3,6 +3,7 @@ import 'package:ffi/ffi.dart';
 import 'package:hdf5/src/utility/enum_utils.dart';
 import 'package:hdf5/src/utility/logging.dart';
 import 'package:numd/numd.dart';
+import 'package:numd/src/base/ndarray.dart' show intListToCArray;
 
 const int H5S_ALL = 0; // /* (hid_t) */
 

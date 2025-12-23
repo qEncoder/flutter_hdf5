@@ -27,8 +27,12 @@ class TypeInfo implements Finalizable {
 
   void dispose() {
     HDF5Bindings HDF5lib = HDF5Bindings();
-    HDF5lib.H5T.close(nativeTypeId);
-    HDF5lib.H5T.close(typeId);
+    if (nativeTypeId >= 0) {
+      HDF5lib.H5T.close(nativeTypeId);
+    }
+    if (typeId >= 0) {
+      HDF5lib.H5T.close(typeId);
+    }
   }
 }
 

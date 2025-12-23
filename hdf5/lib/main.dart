@@ -6,6 +6,7 @@ import 'package:hdf5/hdf5.dart';
 import 'package:hdf5/src/bindings/HDF5_bindings.dart';
 import 'package:hdf5/src/c_to_dart_calls/utility.dart';
 import 'package:numd/numd.dart' as nd;
+import 'package:numd/src/base/ndarray.dart' show intListToCArray;
 
 void main() async {
   runApp(const MyApp());
@@ -109,10 +110,10 @@ void read2D_data_test() {
 
   List<int> outputDim = [31, 31];
 
-  Pointer<Int64> dimMS = nd.intListToCArray(outputDim);
+  Pointer<Int64> dimMS = intListToCArray(outputDim);
   int memSpaceId = H5.H5S.createSimple(outputDim);
 
-  Pointer<Int64> dimDS = nd.intListToCArray(dims);
+  Pointer<Int64> dimDS = intListToCArray(dims);
   int fileSpaceId = H5.H5S.createSimple(dims);
 
   Pointer<Int64> offsetDS = IntListToPtrArr([0, 0]);
@@ -193,8 +194,9 @@ void print_dataset_info() {
     print("filter :: ${filter.filterType.string}");
     print("comression info :: ${filter.compressionInfo}");
     print("chunk size : ${dataset.getChunkSize()}");
-
   }
+
+  h5file.close();
 }
 
 

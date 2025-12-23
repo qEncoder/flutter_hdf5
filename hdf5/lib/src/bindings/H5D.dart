@@ -50,6 +50,16 @@ typedef H5Dread_c = Int64 Function(Int64 dset_id, Int64 mem_type_id,
 typedef H5Dread = int Function(int dset_id, int mem_type_id, int mem_space_id,
     int file_space_id, int dxpl_id, Pointer buf);
 
+typedef H5Dwrite_c = Int64 Function(Int64 dset_id, Int64 mem_type_id,
+    Int64 mem_space_id, Int64 file_space_id, Int64 dxpl_id, Pointer buf);
+typedef H5Dwrite = int Function(int dset_id, int mem_type_id, int mem_space_id,
+    int file_space_id, int dxpl_id, Pointer buf);
+
+typedef H5Dcreate2_c = Int64 Function(Int64 loc_id, Pointer<Uint8> name,
+    Int64 dtype_id, Int64 space_id, Int64 lcpl_id, Int64 dcpl_id, Int64 dapl_id);
+typedef H5Dcreate2 = int Function(int loc_id, Pointer<Uint8> name,
+    int dtype_id, int space_id, int lcpl_id, int dcpl_id, int dapl_id);
+
 typedef H5Drefresh_c = Int64 Function(Int64 dset_id);
 typedef H5Drefresh = int Function(int dset_id);
 
@@ -65,6 +75,8 @@ class H5DBindings {
   final H5Dget_storage_size __getStorageSize;
 
   final H5Dread __read;
+  final H5Dwrite __write;
+  final H5Dcreate2 __create;
   final H5Drefresh __refresh;
 
   H5DBindings(DynamicLibrary HDF5Lib)
@@ -91,6 +103,10 @@ class H5DBindings {
                 .asFunction(),
         __read =
             HDF5Lib.lookup<NativeFunction<H5Dread_c>>('H5Dread').asFunction(),
+        __write =
+            HDF5Lib.lookup<NativeFunction<H5Dwrite_c>>('H5Dwrite').asFunction(),
+        __create =
+            HDF5Lib.lookup<NativeFunction<H5Dcreate2_c>>('H5Dcreate2').asFunction(),
         __refresh = HDF5Lib.lookup<NativeFunction<H5Drefresh_c>>('H5Drefresh')
             .asFunction();
 
@@ -173,6 +189,29 @@ class H5DBindings {
       throw Exception("Failed to read dataset");
     }
     return status;
+  }
+
+  int write(int dset_id, int mem_type_id, int mem_space_id, int file_space_id,
+      int dxpl_id, Pointer buf) {
+    final status =
+        __write(dset_id, mem_type_id, mem_space_id, file_space_id, dxpl_id, buf);
+    if (status < 0) {
+      logger.severe('Failed to write dataset with id $dset_id');
+      throw Exception("Failed to write dataset");
+    }
+    logger.info('Successfully wrote to dataset with id $dset_id');
+    return status;
+  }
+
+  int create(int loc_id, Pointer<Uint8> name, int dtype_id, int space_id,
+      int lcpl_id, int dcpl_id, int dapl_id) {
+    final dset_id = __create(loc_id, name, dtype_id, space_id, lcpl_id, dcpl_id, dapl_id);
+    if (dset_id < 0) {
+      logger.severe('Failed to create dataset with name $name');
+      throw Exception("Failed to create dataset");
+    }
+    logger.info('Created dataset with id $dset_id and name $name');
+    return dset_id;
   }
 
   int refresh(int dset_id) {

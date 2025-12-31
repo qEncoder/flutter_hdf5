@@ -100,7 +100,7 @@ ndarray readData(datasetId, dynamic idx) {
     }
 
     // Create Numd array with correct type and shape (allocates memory)
-    // ⚠️ LIMITATION: Cannot handle datasets with zero-size dimensions (e.g., shape [0] or [5, 0, 3])
+    // LIMITATION: Cannot handle datasets with zero-size dimensions (e.g., shape [0] or [5, 0, 3])
     // Root cause: Numd's fromShape() validates all dimensions must be > 0 (ndarray.dart:88-90)
     // Backend (xtensor) supports empty arrays, but Numd API does not expose this capability
     ndarray dataOut;

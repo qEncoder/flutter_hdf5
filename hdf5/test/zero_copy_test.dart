@@ -291,7 +291,7 @@ void main() {
   });
 
   test('Boundary case: Empty dataset (known Numd limitation)', () {
-    // ⚠️ LIMITATION: Empty datasets are valid in HDF5 but NOT currently supported
+    // LIMITATION: Empty datasets are valid in HDF5 but NOT currently supported
     //
     // Root Cause: Numd's fromList() and fromShape() methods in ndarray.dart
     //   - fromList: __getListOfListSize() tries to access mylist[0] on empty list (line 123)

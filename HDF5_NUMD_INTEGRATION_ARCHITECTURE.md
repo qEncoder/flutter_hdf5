@@ -96,17 +96,17 @@ Copy Operations: 0
 ```
 
 #### Pros
-- ✅ **Absolute Best Performance**: Zero memory overhead, instant access
-- ✅ **Maximum Efficiency**: No CPU cycles wasted on copying
-- ✅ **Scalable**: Works perfectly for datasets of any size
-- ✅ **Memory Efficient**: One allocation serves both HDF5 and Numd
+- - **Absolute Best Performance**: Zero memory overhead, instant access
+- - **Maximum Efficiency**: No CPU cycles wasted on copying
+- - **Scalable**: Works perfectly for datasets of any size
+- - **Memory Efficient**: One allocation serves both HDF5 and Numd
 
 #### Cons
-- ❌ **Requires Numd Changes**: Would need to add `fromBuffer()` API to Numd
-- ❌ **External Dependency**: Depends on Numd maintainers accepting changes
-- ❌ **Complex Memory Management**: Must carefully track who owns memory
-- ❌ **Longer Timeline**: 2-4 weeks if collaborating with Numd team
-- ❌ **Risk of Breaking Changes**: Future Numd updates could break our code
+- - **Requires Numd Changes**: Would need to add `fromBuffer()` API to Numd
+- - **External Dependency**: Depends on Numd maintainers accepting changes
+- - **Complex Memory Management**: Must carefully track who owns memory
+- - **Longer Timeline**: 2-4 weeks if collaborating with Numd team
+- - **Risk of Breaking Changes**: Future Numd updates could break our code
 
 #### Why We Didn't Choose It
 While this is the most elegant solution, it requires changes to an external library (Numd) that we don't control. This introduces:
@@ -167,18 +167,18 @@ Copy Operations: 1 (optimized batch copy)
 ```
 
 #### Pros
-- ✅ **No External Dependencies**: Uses only Dart's built-in TypedList
-- ✅ **Fast Implementation**: Completed in 3 days
-- ✅ **Significant Performance Gains**: 5x faster than naive approach
-- ✅ **50% Memory Reduction**: Eliminated unnecessary intermediate buffers
-- ✅ **Production Ready**: No waiting on external PRs
-- ✅ **Maintainable**: Simple, straightforward code
-- ✅ **Type Safe**: Proper dtype mapping (float32, float64, int32, int64)
+- - **No External Dependencies**: Uses only Dart's built-in TypedList
+- - **Fast Implementation**: Completed in 3 days
+- - **Significant Performance Gains**: 5x faster than naive approach
+- - **50% Memory Reduction**: Eliminated unnecessary intermediate buffers
+- - **Production Ready**: No waiting on external PRs
+- - **Maintainable**: Simple, straightforward code
+- - **Type Safe**: Proper dtype mapping (float32, float64, int32, int64)
 
 #### Cons
-- ⚠️ **Not True Zero-Copy**: Still copies data once (HDF5 → Numd)
-- ⚠️ **Brief Memory Spike**: Temporarily uses 2x memory during copy
-- ⚠️ **Not Optimal for Very Large Data**: Multi-GB datasets still incur copy cost
+- - **Not True Zero-Copy**: Still copies data once (HDF5 → Numd)
+- - **Brief Memory Spike**: Temporarily uses 2x memory during copy
+- - **Not Optimal for Very Large Data**: Multi-GB datasets still incur copy cost
 
 #### Why We Chose It
 1. **Immediate Value**: Delivers 5x speedup without external dependencies
@@ -231,15 +231,15 @@ Copy Operations: 1,000,000+ (one per element!)
 ```
 
 #### Pros
-- ✅ **Simple to Understand**: Straightforward for-loop logic
-- ✅ **No Special APIs**: Works with basic array access
+- - **Simple to Understand**: Straightforward for-loop logic
+- - **No Special APIs**: Works with basic array access
 
 #### Cons
-- ❌ **Extremely Slow**: 200ms for 10M elements (vs 40ms with Option 2)
-- ❌ **100% Memory Overhead**: Allocates memory twice
-- ❌ **Cache Inefficient**: Poor memory access patterns
-- ❌ **CPU Intensive**: Millions of individual read/write operations
-- ❌ **Not Scalable**: Performance degrades linearly with data size
+- - **Extremely Slow**: 200ms for 10M elements (vs 40ms with Option 2)
+- - **100% Memory Overhead**: Allocates memory twice
+- - **Cache Inefficient**: Poor memory access patterns
+- - **CPU Intensive**: Millions of individual read/write operations
+- - **Not Scalable**: Performance degrades linearly with data size
 
 #### Why We Rejected It
 This was the original implementation before optimization. Performance testing showed it was unacceptably slow for real-world datasets:
@@ -256,12 +256,12 @@ We evaluated each option against these criteria:
 
 | Criterion | Option 1 (Zero-Copy) | Option 2 (TypedList) | Option 3 (Manual) |
 |-----------|---------------------|---------------------|-------------------|
-| **Performance** | ⭐⭐⭐⭐⭐ Excellent | ⭐⭐⭐⭐ Very Good | ⭐⭐ Poor |
-| **Memory Efficiency** | ⭐⭐⭐⭐⭐ Excellent | ⭐⭐⭐⭐ Good | ⭐⭐ Poor |
-| **Implementation Speed** | ⭐⭐ Slow (2-4 weeks) | ⭐⭐⭐⭐⭐ Fast (3 days) | ⭐⭐⭐⭐⭐ Fast |
-| **External Dependencies** | ⭐ High (Numd changes) | ⭐⭐⭐⭐⭐ None | ⭐⭐⭐⭐⭐ None |
-| **Maintainability** | ⭐⭐⭐ Medium | ⭐⭐⭐⭐⭐ Excellent | ⭐⭐⭐⭐ Good |
-| **Risk Level** | ⭐⭐⭐ Medium | ⭐⭐⭐⭐⭐ Low | ⭐⭐⭐⭐⭐ Low |
+| **Performance** |  Excellent |  Very Good |  Poor |
+| **Memory Efficiency** |  Excellent |  Good |  Poor |
+| **Implementation Speed** |  Slow (2-4 weeks) |  Fast (3 days) |  Fast |
+| **External Dependencies** |  High (Numd changes) |  None |  None |
+| **Maintainability** |  Medium |  Excellent |  Good |
+| **Risk Level** |  Medium |  Low |  Low |
 
 ### The Winning Argument
 
@@ -618,19 +618,19 @@ Performance across different dataset sizes:
 
 #### Medical Imaging (512×512×300 volume)
 - **Size**: 78.6M float32 values (314 MB)
-- **Option 3**: 1.57 seconds ❌
-- **Option 2**: 314ms ✅ (acceptable for real-time viewing)
+- **Option 3**: 1.57 seconds 
+- **Option 2**: 314ms - (acceptable for real-time viewing)
 
 #### Climate Data (1000×1000×365 daily grid)
 - **Size**: 365M float64 values (2.9 GB)
-- **Option 3**: 7.3 seconds ❌
-- **Option 2**: 1.46 seconds ✅ (usable for analysis)
-- **Option 1 (theoretical)**: 300ms 🚀 (future goal)
+- **Option 3**: 7.3 seconds 
+- **Option 2**: 1.46 seconds - (usable for analysis)
+- **Option 1 (theoretical)**: 300ms  (future goal)
 
 #### Mobile Deployment (10×10×100 sensor data)
 - **Size**: 10K float32 values (40 KB)
-- **Option 3**: 2ms ✅
-- **Option 2**: 0.4ms ✅ (6x more battery efficient)
+- **Option 3**: 2ms 
+- **Option 2**: 0.4ms - (6x more battery efficient)
 
 ---
 

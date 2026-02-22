@@ -32,10 +32,11 @@ dependencies:
     sdk: flutter
   ffi: ^2.0.1
   numd:
-    git:
-      url: https://github.com/qEncoder/numd.git
-      path: numd
-      ref: main
+    path: ../../numd/numd
+    # git:
+    #   url: https://github.com/qEncoder/numd.git
+    #   path: numd
+    #   ref: main
   hdf5_c_libs:
     path: ../hdf5_c_libs
 

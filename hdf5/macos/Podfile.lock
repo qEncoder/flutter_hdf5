@@ -1,12 +1,22 @@
 PODS:
   - FlutterMacOS (1.0.0)
+  - hdf5_c_libs (0.1.0):
+    - FlutterMacOS
+  - numd_c_libs (0.1.0):
+    - FlutterMacOS
 
 DEPENDENCIES:
   - FlutterMacOS (from `Flutter/ephemeral`)
+  - hdf5_c_libs (from `Flutter/ephemeral/.symlinks/plugins/hdf5_c_libs/macos`)
+  - numd_c_libs (from `Flutter/ephemeral/.symlinks/plugins/numd_c_libs/macos`)
 
 EXTERNAL SOURCES:
   FlutterMacOS:
     :path: Flutter/ephemeral
+  hdf5_c_libs:
+    :path: Flutter/ephemeral/.symlinks/plugins/hdf5_c_libs/macos
+  numd_c_libs:
+    :path: Flutter/ephemeral/.symlinks/plugins/numd_c_libs/macos
 
 SPEC CHECKSUMS:
   FlutterMacOS: d0db08ddef1a9af05a5ec4b724367152bb0500b1

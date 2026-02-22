@@ -1,4 +1,3 @@
-
 import 'package:hdf5/src/bindings/HDF5_bindings.dart';
 import 'package:hdf5/src/c_to_dart_calls/attributes.dart';
 import 'package:hdf5/src/c_to_dart_calls/type_info.dart';
@@ -58,22 +57,20 @@ ndarray readData(datasetId, dynamic idx) {
         int nMembers = HDF5lib.H5T.getNMembers(typeInfo.nativeTypeId);
 
         if (nMembers != 2) {
-          throw Exception("Only complex numbers (2-member compounds) are supported. Found $nMembers members.");
+          throw Exception(
+              "Only complex numbers (2-member compounds) are supported. Found $nMembers members.");
         }
 
         List<CompoundMemberInfo> compoundMemberInfo = [];
         for (int i = 0; i < nMembers; i++) {
-          String memberName = HDF5lib.H5T.getMemberName(typeInfo.nativeTypeId, i);
+          String memberName =
+              HDF5lib.H5T.getMemberName(typeInfo.nativeTypeId, i);
           int memberType = HDF5lib.H5T.getMemberType(typeInfo.nativeTypeId, i);
           TypeInfo memberTypeInfo = getTypeInfo(memberType);
           int offset = HDF5lib.H5T.getMemberOffset(typeInfo.nativeTypeId, i);
 
           compoundMemberInfo.add(CompoundMemberInfo(
-            memberName,
-            SpaceInfo(0, [], []),
-            memberTypeInfo,
-            offset
-          ));
+              memberName, SpaceInfo(0, [], []), memberTypeInfo, offset));
         }
 
         // Validate complex type
@@ -83,12 +80,15 @@ ndarray readData(datasetId, dynamic idx) {
         }
 
         // Determine complex dtype based on precision
-        if (compoundMemberInfo[0].typeInfo.size == 4 && compoundMemberInfo[1].typeInfo.size == 4) {
+        if (compoundMemberInfo[0].typeInfo.size == 4 &&
+            compoundMemberInfo[1].typeInfo.size == 4) {
           dtype = DType.complex64;
-        } else if (compoundMemberInfo[0].typeInfo.size == 8 && compoundMemberInfo[1].typeInfo.size == 8) {
+        } else if (compoundMemberInfo[0].typeInfo.size == 8 &&
+            compoundMemberInfo[1].typeInfo.size == 8) {
           dtype = DType.complex128;
         } else {
-          throw Exception("Only float32 (complex64) and float64 (complex128) complex types are supported.");
+          throw Exception(
+              "Only float32 (complex64) and float64 (complex128) complex types are supported.");
         }
 
         // Use the native type ID for complex compound types
@@ -96,7 +96,8 @@ ndarray readData(datasetId, dynamic idx) {
         break;
 
       default:
-        throw Exception("Only integer, float, and complex types are supported.");
+        throw Exception(
+            "Only integer, float, and complex types are supported.");
     }
 
     // Create Numd array with correct type and shape (allocates memory)
@@ -134,16 +135,11 @@ ndarray readData(datasetId, dynamic idx) {
     }
 
     // HDF5 reads DIRECTLY into Numd's memory - TRUE ZERO-COPY!
-    HDF5lib.H5D.read(
-      datasetId,
-      h5TypeId,
-      space.memSpaceId,
-      space.fileSpaceId,
-      H5P_DEFAULT,
-      dataPtr
-    );
+    HDF5lib.H5D.read(datasetId, h5TypeId, space.memSpaceId, space.fileSpaceId,
+        H5P_DEFAULT, dataPtr);
 
-    logger.info("Data read from dataset $datasetId successfully (zero-copy, dtype: $dtype)");
+    logger.info(
+        "Data read from dataset $datasetId successfully (zero-copy, dtype: $dtype)");
     return dataOut;
   } finally {
     // Cleanup resources regardless of success or failure
@@ -226,8 +222,7 @@ void writeData(int datasetId, ndarray data) {
     spaceInfo.dispose();
     typeInfo.dispose();
     throw Exception(
-      'Data size mismatch: expected $expectedSize elements but got ${data.size} elements'
-    );
+        'Data size mismatch: expected $expectedSize elements but got ${data.size} elements');
   }
 
   // Get pointer to Numd array's data based on dtype
@@ -240,8 +235,7 @@ void writeData(int datasetId, ndarray data) {
         spaceInfo.dispose();
         typeInfo.dispose();
         throw Exception(
-          'Type mismatch: dataset expects ${typeInfo.type} size ${typeInfo.size}, but got float32'
-        );
+            'Type mismatch: dataset expects ${typeInfo.type} size ${typeInfo.size}, but got float32');
       }
       dataPtr = data.getDataPointer().cast<Float>();
       h5TypeId = HDF5lib.H5T.H5T_NATIVE_FLOAT;
@@ -252,8 +246,7 @@ void writeData(int datasetId, ndarray data) {
         spaceInfo.dispose();
         typeInfo.dispose();
         throw Exception(
-          'Type mismatch: dataset expects ${typeInfo.type} size ${typeInfo.size}, but got float64'
-        );
+            'Type mismatch: dataset expects ${typeInfo.type} size ${typeInfo.size}, but got float64');
       }
       dataPtr = data.getDataPointer().cast<Double>();
       h5TypeId = HDF5lib.H5T.H5T_NATIVE_DOUBLE;
@@ -264,8 +257,7 @@ void writeData(int datasetId, ndarray data) {
         spaceInfo.dispose();
         typeInfo.dispose();
         throw Exception(
-          'Type mismatch: dataset expects ${typeInfo.type} size ${typeInfo.size}, but got int32'
-        );
+            'Type mismatch: dataset expects ${typeInfo.type} size ${typeInfo.size}, but got int32');
       }
       dataPtr = data.getDataPointer().cast<Int32>();
       h5TypeId = HDF5lib.H5T.H5T_NATIVE_INT;
@@ -276,8 +268,7 @@ void writeData(int datasetId, ndarray data) {
         spaceInfo.dispose();
         typeInfo.dispose();
         throw Exception(
-          'Type mismatch: dataset expects ${typeInfo.type} size ${typeInfo.size}, but got int64'
-        );
+            'Type mismatch: dataset expects ${typeInfo.type} size ${typeInfo.size}, but got int64');
       }
       dataPtr = data.getDataPointer().cast<Int64>();
       h5TypeId = HDF5lib.H5T.H5T_NATIVE_LLONG;
@@ -288,27 +279,21 @@ void writeData(int datasetId, ndarray data) {
       spaceInfo.dispose();
       typeInfo.dispose();
       throw UnsupportedError(
-        'Zero-copy write for complex types (${data.dtype}) is not yet supported. '
-        'Numd library does not expose data pointers for complex arrays.'
-      );
+          'Zero-copy write for complex types (${data.dtype}) is not yet supported. '
+          'Numd library does not expose data pointers for complex arrays.');
   }
 
   // Write data directly from Numd's memory buffer to HDF5 (ZERO-COPY!)
-  int status = HDF5lib.H5D.write(
-    datasetId,
-    h5TypeId,
-    H5S_ALL,
-    H5S_ALL,
-    H5P_DEFAULT,
-    dataPtr
-  );
+  int status = HDF5lib.H5D
+      .write(datasetId, h5TypeId, H5S_ALL, H5S_ALL, H5P_DEFAULT, dataPtr);
 
   // Cleanup - dispose() methods handle closing the HDF5 resources
   spaceInfo.dispose();
   typeInfo.dispose();
 
   if (status < 0) {
-    throw Exception('Failed to write data to dataset $datasetId (H5Dwrite returned $status)');
+    throw Exception(
+        'Failed to write data to dataset $datasetId (H5Dwrite returned $status)');
   }
 
   logger.info("Data written to dataset $datasetId successfully");

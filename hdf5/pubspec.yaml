@@ -35,7 +35,7 @@ dependencies:
     git:
       url: https://github.com/qEncoder/numd.git
       path: numd
-      ref: dev
+      ref: main
   hdf5_c_libs:
     path: ../hdf5_c_libs
 

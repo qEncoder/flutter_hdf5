@@ -1,0 +1,14 @@
+{
+	"InstallScripts" : 
+	[
+		"/Users/Apple/StudioProjects/flutter_hdf5/build-x86_64/cmake_install.cmake",
+		"/Users/Apple/StudioProjects/flutter_hdf5/build-x86_64/src/cmake_install.cmake",
+		"/Users/Apple/StudioProjects/flutter_hdf5/build-x86_64/src/H5FDsubfiling/cmake_install.cmake",
+		"/Users/Apple/StudioProjects/flutter_hdf5/build-x86_64/utils/cmake_install.cmake",
+		"/Users/Apple/StudioProjects/flutter_hdf5/build-x86_64/utils/mirror_vfd/cmake_install.cmake",
+		"/Users/Apple/StudioProjects/flutter_hdf5/build-x86_64/utils/subfiling_vfd/cmake_install.cmake",
+		"/Users/Apple/StudioProjects/flutter_hdf5/build-x86_64/hl/cmake_install.cmake",
+		"/Users/Apple/StudioProjects/flutter_hdf5/build-x86_64/hl/src/cmake_install.cmake"
+	],
+	"Parallel" : false
+}

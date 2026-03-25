@@ -9,8 +9,26 @@ import 'package:hdf5/src/c_to_dart_calls/dataset.dart' as dataset_ops;
 import 'package:numd/numd.dart' as nd;
 
 import 'dart:ffi';
+import 'dart:io' show File, Platform;
 import 'package:ffi/ffi.dart';
 import 'package:hdf5/src/utility/logging.dart';
+
+/// On Windows, paths longer than 260 chars need the \\?\ extended-length prefix.
+String _ensureWindowsLongPath(String path) {
+  if (!Platform.isWindows) return path;
+  if (path.startsWith(r'\\?\')) return path;
+  String absolute = File(path).absolute.path;
+  // Normalize to backslashes for the \\?\ prefix
+  absolute = absolute.replaceAll('/', r'\');
+  if (absolute.length >= 260) {
+    if (absolute.startsWith(r'\\')) {
+      // UNC path: \\server\share -> \\?\UNC\server\share
+      return r'\\?\UNC\' + absolute.substring(2);
+    }
+    return r'\\?\' + absolute;
+  }
+  return path;
+}
 
 class H5File {
   final String fileName;
@@ -21,13 +39,16 @@ class H5File {
 
   get fileId => (__closed) ? -1 : __fileId;
 
-  H5File.open(this.fileName)
-      : __fileId =
-            HDF5Bindings().H5F.open(fileName, H5F_ACC_SWMR_READ, H5P_DEFAULT);
+  H5File.open(String path)
+      : fileName = _ensureWindowsLongPath(path),
+        __fileId = HDF5Bindings()
+            .H5F
+            .open(_ensureWindowsLongPath(path), H5F_ACC_SWMR_READ, H5P_DEFAULT);
 
-  H5File.create(this.fileName, {int flags = H5F_ACC_TRUNC})
-      : __fileId =
-            HDF5Bindings().H5F.create(fileName, flags, H5P_DEFAULT, H5P_DEFAULT);
+  H5File.create(String path, {int flags = H5F_ACC_TRUNC})
+      : fileName = _ensureWindowsLongPath(path),
+        __fileId = HDF5Bindings().H5F.create(
+            _ensureWindowsLongPath(path), flags, H5P_DEFAULT, H5P_DEFAULT);
 
   H5File.openROS3(
       String url, String aws_region, String secret_id, String secret_key,

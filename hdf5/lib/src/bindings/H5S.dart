@@ -3,7 +3,7 @@ import 'package:ffi/ffi.dart';
 import 'package:hdf5/src/utility/enum_utils.dart';
 import 'package:hdf5/src/utility/logging.dart';
 import 'package:numd/numd.dart';
-import 'package:numd/src/base/ndarray.dart' show intListToCArray;
+import 'package:hdf5/src/c_to_dart_calls/utility.dart' show IntListToPtrArr;
 
 const int H5S_ALL = 0; // /* (hid_t) */
 
@@ -120,7 +120,7 @@ class H5SBindings {
   }
 
   int createSimple(List<int> dims) {
-    Pointer<Int64> dimMS = intListToCArray(dims);
+    Pointer<Int64> dimMS = IntListToPtrArr(dims);
     final space_id = __createSimple(dims.length, dimMS, nullptr);
     calloc.free(dimMS);
     if (space_id < 0) {
@@ -131,8 +131,8 @@ class H5SBindings {
   }
 
   void selectHyperslab(int space_id, List<int> start, List<int> count) {
-    Pointer<Int64> startPtr = intListToCArray(start);
-    Pointer<Int64> countPtr = intListToCArray(count);
+    Pointer<Int64> startPtr = IntListToPtrArr(start);
+    Pointer<Int64> countPtr = IntListToPtrArr(count);
 
     final status = __selectHyperslab(
         space_id, H5S_seloper_t.SET.value, startPtr, nullptr, countPtr, nullptr);

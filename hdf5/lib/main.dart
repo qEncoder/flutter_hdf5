@@ -6,7 +6,6 @@ import 'package:hdf5/hdf5.dart';
 import 'package:hdf5/src/bindings/HDF5_bindings.dart';
 import 'package:hdf5/src/c_to_dart_calls/utility.dart';
 import 'package:numd/numd.dart' as nd;
-import 'package:numd/src/base/ndarray.dart' show intListToCArray;
 
 void main() async {
   runApp(const MyApp());

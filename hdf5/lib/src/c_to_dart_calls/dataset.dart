@@ -96,56 +96,68 @@ ndarray readData(datasetId, dynamic idx) {
         h5TypeId = typeInfo.nativeTypeId;
         break;
 
-      case H5T_class_t.VLEN:
-        TypeInfo vlenBaseType =
-            getTypeInfo(HDF5lib.H5T.getSuper(typeInfo.nativeTypeId));
+      case H5T_class_t.STRING:
 
-        if (vlenBaseType.type != H5T_class_t.STRING) {
-          vlenBaseType.dispose();
-          throw Exception(
-              "Only variable-length strings are supported for VLEN datasets.");
-        }
-
-        H5T_cset_t cset = HDF5lib.H5T.getCSet(vlenBaseType.nativeTypeId);
-        vlenBaseType.dispose();
-
-        // numd stores raw bytes and UTF-8-decodes on readback; ASCII is a
-        // UTF-8 subset, so both HDF5 charsets round-trip byte-for-byte.
+        H5T_cset_t cset = HDF5lib.H5T.getCSet(typeInfo.nativeTypeId);
+        
+        // only allow ASCII and UTF-8 character sets for string datasets
         if (cset != H5T_cset_t.ASCII && cset != H5T_cset_t.UTF8) {
           throw Exception("Unsupported character set for string dataset.");
         }
 
-        // One hvl_t struct (length + data pointer) per selected element
-        int nElem =
-            space.outputDim.isEmpty ? 1 : space.outputDim.reduce((a, b) => a * b);
+        final shape = space.outputDim.isEmpty ? [1] : space.outputDim;
+        final nElem = shape.reduce((a, b) => a * b);
+        final dataOut = ndarray.fromShape(shape, dtype: DType.string);
 
-        Pointer<hvl_t> vlenDataPtr = calloc<hvl_t>(nElem);
-        HDF5lib.H5D.read(datasetId, typeInfo.nativeTypeId, space.memSpaceId,
-            space.fileSpaceId, H5P_DEFAULT, vlenDataPtr.cast());
 
-        ndarray dataOut = ndarray.fromShape(
-            space.outputDim.isEmpty ? [1] : space.outputDim,
-            dtype: DType.string);
+        if (HDF5lib.H5T.isVariableStr(typeInfo.nativeTypeId) > 0) {
+          final buf = calloc<Pointer<Utf8>>(nElem);
+          HDF5lib.H5D.read(datasetId, typeInfo.nativeTypeId,
+              space.memSpaceId, space.fileSpaceId, H5P_DEFAULT, buf.cast());
 
-        // Hand each HDF5 buffer straight to numd using its explicit length —
-        // no Dart-side String round-trip, and no null-termination assumption.
-        for (int i = 0; i < nElem; i++) {
-          dataOut.flat.setStringFromPointer(
-              i, vlenDataPtr[i].p.cast<Char>(), vlenDataPtr[i].len);
+          for (int i = 0; i < nElem; i++) {
+            final p = buf[i];
+            if (p == nullptr) {
+              dataOut.flat.setStringFromPointer(i, nullptr.cast(), 0);
+            } else {
+              dataOut.flat.setStringFromPointer(i, p.cast(), p.length);
+            }
+          }
+
+          HDF5lib.H5T.reclaim(typeInfo.nativeTypeId, space.memSpaceId, H5P_DEFAULT, buf.cast());
+          calloc.free(buf);
+        } else{
+          throw Exception("Fixed-length string datasets are not yet supported. Please use variable-length (VLEN) strings.");
+          // TEMPLATE FOR WHEN NEEDED
+          // final sz  = typeInfo.size; 
+          // final buf = calloc<Uint8>(sz * nElem);
+          // HDF5lib.H5D.read(datasetId, typeInfo.nativeTypeId,
+          //     space.memSpaceId, space.fileSpaceId, H5P_DEFAULT, buf.cast());
+
+          // final pad = HDF5lib.H5T.getStrpad(typeInfo.nativeTypeId);
+          // final bytes = buf.asTypedList(sz * nElem);
+
+          // for (int i = 0; i < nElem; i++) {
+          //   final start = i * sz;
+          //   int len = sz;
+          //   if (pad == H5T_STR_NULLTERM || pad == H5T_STR_NULLPAD) {
+          //     while (len > 0 && bytes[start + len - 1] == 0) len--;
+          //   } else {                                  // H5T_STR_SPACEPAD
+          //     while (len > 0 && bytes[start + len - 1] == 0x20) len--;
+          //   }
+          //   dataOut.flat.setStringFromPointer(
+          //       i, Pointer<Uint8>.fromAddress(buf.address + start).cast(), len);
+          // }
+
+          // calloc.free(buf);
         }
-
-        // Release the variable-length data allocated by HDF5, then the buffer
-        HDF5lib.H5T.reclaim(typeInfo.nativeTypeId, space.memSpaceId,
-            H5P_DEFAULT, vlenDataPtr.cast());
-        calloc.free(vlenDataPtr);
-
-        logger.info(
-            "Data read from dataset $datasetId successfully (vlen string)");
+        
         return dataOut;
-
       default:
         throw Exception(
-            "Only integer, float, and complex types are supported.");
+            "Unsupported HDF5 type class ${typeInfo.type} (size ${typeInfo.size}) "
+            "for dataset $datasetId. Supported: integer, float, complex, and "
+            "variable-length (VLEN) string.");
     }
 
     // Create Numd array with correct type and shape (allocates memory)
